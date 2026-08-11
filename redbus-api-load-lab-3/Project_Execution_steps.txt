@@ -1,6 +1,0 @@
-
-
-Terminal 1 — start the API + UI:
-
-cd "redbus-workload-lab" && source venv/bin/activate && uvicorn main:app --port 8001
-
