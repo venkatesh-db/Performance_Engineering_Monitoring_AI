@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>redBus Performance Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; background:#f5f6f8; }
+  h1 { color: #d84e55; }
+  .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); display:flex; justify-content:space-between; align-items:center; }
+  button { background:#d84e55; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; }
+  #seatGrid { display:grid; grid-template-columns: repeat(8, 1fr); gap:6px; margin-top:12px; }
+  .seat { padding:8px; text-align:center; border-radius:4px; background:#c8e6c9; font-size:12px; }
+  .seat.booked { background:#e0e0e0; color:#999; }
+  #timing { color:#555; font-size:13px; margin-top:8px; }
+  form { margin-bottom:20px; }
+  input { padding:6px; margin-right:6px; }
+</style>
+</head>
+<body>
+<h1>redBus Performance Lab</h1>
+
+<form id="searchForm">
+  <input name="source" value="Bangalore" placeholder="From">
+  <input name="destination" value="Chennai" placeholder="To">
+  <input name="travel_date" value="2026-08-15" placeholder="Date">
+  <button type="submit">Search buses</button>
+</form>
+
+<div id="timing"></div>
+<div id="results"></div>
+<div id="seatGrid"></div>
+
+<script>
+const form = document.getElementById('searchForm');
+const results = document.getElementById('results');
+const timing = document.getElementById('timing');
+const seatGrid = document.getElementById('seatGrid');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const params = new URLSearchParams(new FormData(form));
+  results.innerHTML = 'Searching...';
+  seatGrid.innerHTML = '';
+  const t0 = performance.now();
+  const res = await fetch('/api/search?' + params);
+  const data = await res.json();
+  const t1 = performance.now();
+  timing.textContent = `Search took ${(t1 - t0).toFixed(0)} ms, ${data.count} buses found`;
+  results.innerHTML = data.buses.slice(0, 20).map(b => `
+    <div class="card">
+      <div>
+        <strong>${b.operator}</strong><br>
+        ${b.source} &rarr; ${b.destination} | ${b.departure} | ${b.travel_date}
+      </div>
+      <div>
+        &#8377;${b.fare}
+        <button onclick="loadSeats(${b.id})">Select seats</button>
+      </div>
+    </div>
+  `).join('');
+});
+
+async function loadSeats(busId) {
+  seatGrid.innerHTML = 'Loading seats...';
+  const t0 = performance.now();
+  const res = await fetch(`/api/seats/${busId}`);
+  const data = await res.json();
+  const t1 = performance.now();
+  timing.textContent += ` | Seat map took ${(t1 - t0).toFixed(0)} ms`;
+  seatGrid.innerHTML = data.seats.map(s =>
+    `<div class="seat ${s.is_booked ? 'booked' : ''}">${s.seat_no}</div>`
+  ).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-perf-lab"
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+Terminal 1 — start the API + UI:
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-perf-lab"
+source venv/bin/activate
+uvicorn main:app --port 8000
+
+Then open http://127.0.0.1:8000 in your browser.
+
+Terminal 2 — run the load test (leave Terminal 1 running):
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-perf-lab"
+source venv/bin/activate
+locust -f locustfile.py --host=http://127.0.0.1:8001
+
+Then open http://localhost:8089, set number of users / spawn rate, and click Start.
