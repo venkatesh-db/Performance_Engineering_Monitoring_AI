@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>redBus Payment API — Module 3 Hands-on Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #d84e55; margin-bottom: 4px; }
+  h2 { font-size: 16px; color:#333; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#d84e55; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; font-size:14px; }
+  button:disabled { background:#c9a2a5; cursor:not-allowed; }
+  button.secondary { background:#3b5a80; }
+  input { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; }
+  .success { color:#1a7f37; } .declined { color:#b26a00; } .error { color:#c62828; }
+  table { width:100%; border-collapse: collapse; margin-top:12px; font-size: 13px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; }
+  th { color:#555; font-weight:600; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+  .pill.pass { background:#e6f4ea; color:#1a7f37; }
+  .pill.fail { background:#fdecea; color:#c62828; }
+  .pill.running { background:#e8f0fe; color:#1a56db; }
+  .row { display:flex; gap:16px; }
+  .row > div { flex:1; }
+  .hint { color:#888; font-size:12px; margin-top:6px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>redBus Payment API</h1>
+<p class="subtitle">Module 3 hands-on lab console — JMeter &amp; k6 workloads, VU-based vs arrival-rate execution, live thresholds, cross-tool comparison.</p>
+
+<div class="card">
+  <h2>1. Manual transaction (the actual product, one call at a time)</h2>
+  <div class="row">
+    <div>
+      <input id="customerId" value="CUST001" placeholder="customer id">
+      <button onclick="login()">Login</button>
+      <div class="log" id="loginLog"></div>
+    </div>
+    <div>
+      <input id="txnId" placeholder="transaction id (auto if blank)">
+      <input id="amount" value="500" placeholder="amount">
+      <button onclick="pay()">Pay</button>
+      <div class="log" id="payLog"></div>
+    </div>
+  </div>
+  <p class="hint">Try a customer id ending in "0" (e.g. CUST010) to see a DECLINED business response, or repeat a transaction id to see the duplicate-transaction rejection.</p>
+</div>
+
+<div class="card">
+  <h2>2. Run a k6 workload against this API (real k6 subprocess, not simulated)</h2>
+  <p class="hint">This maps to the lab's "execute a concurrent-user and arrival-rate scenario" step. Both buttons run the identical journey (<code>k6/payment_test.js</code>) — only the executor changes.</p>
+  <div class="row">
+    <div>
+      <strong>Closed model — constant-vus</strong><br>
+      <button onclick="runK6('vus')" id="btnVus">Run 20 VUs / 20s</button>
+    </div>
+    <div>
+      <strong>Open model — constant-arrival-rate</strong><br>
+      <input id="rate" value="70" style="width:60px" placeholder="req/s">
+      <button onclick="runK6('arrival')" id="btnArrival">Run at rate / 20s</button>
+    </div>
+  </div>
+  <div class="log" id="k6Status"></div>
+</div>
+
+<div class="card">
+  <h2>3. k6 run history &amp; thresholds</h2>
+  <table id="k6Table">
+    <thead><tr><th>Model</th><th>Status</th><th>P50</th><th>P95</th><th>P99</th><th>Success</th><th>Declined</th><th>Infra errors</th><th>Dropped iters</th><th>Thresholds</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>4. Compare against JMeter</h2>
+  <p class="hint">
+    JMeter test plan: <code>jmeter/payment_test.jmx</code> (same journey, CSV-parameterized, token correlation).
+    Run it yourself: <code>jmeter -n -t jmeter/payment_test.jmx -l results.jtl -e -o report/</code>, then enter the Summary Report numbers below to compare against the k6 runs above.
+  </p>
+  <div class="row">
+    <div><input id="jmLabel" placeholder="label, e.g. 'JMeter 20 threads'"></div>
+    <div><input id="jmP95" placeholder="P95 ms"></div>
+    <div><input id="jmErr" placeholder="error rate %"></div>
+    <div><input id="jmRps" placeholder="throughput req/s"></div>
+    <div><button class="secondary" onclick="addJmeter()">Add result</button></div>
+  </div>
+  <table id="jmTable">
+    <thead><tr><th>Label</th><th>P95</th><th>Error rate</th><th>Throughput</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+let token = null;
+
+async function login() {
+  const customer_id = document.getElementById('customerId').value;
+  const res = await fetch('/api/customers/login', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({customer_id})
+  });
+  const data = await res.json();
+  token = data.token;
+  document.getElementById('loginLog').innerHTML =
+    `<span class="success">Logged in as ${data.customer_id}, token=${token.slice(0,8)}...</span>`;
+}
+
+async function pay() {
+  if (!token) { alert('login first'); return; }
+  let txnId = document.getElementById('txnId').value;
+  if (!txnId) txnId = 'TXN-' + Math.random().toString(36).slice(2, 10);
+  const amount = parseInt(document.getElementById('amount').value, 10);
+  const t0 = performance.now();
+  const res = await fetch('/api/payments', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+    body: JSON.stringify({transaction_id: txnId, amount})
+  });
+  const ms = (performance.now() - t0).toFixed(0);
+  const log = document.getElementById('payLog');
+  if (res.ok) {
+    const data = await res.json();
+    const cls = data.status === 'SUCCESS' ? 'success' : 'declined';
+    log.innerHTML = `<span class="${cls}">${data.status} — txn=${data.transaction_id} ${data.reason || ''}</span> (${ms}ms)`;
+  } else {
+    const err = await res.json();
+    log.innerHTML = `<span class="error">${res.status} ERROR: ${err.detail}</span> (${ms}ms)`;
+  }
+}
+
+async function runK6(scenario) {
+  const btn = document.getElementById(scenario === 'vus' ? 'btnVus' : 'btnArrival');
+  btn.disabled = true;
+  const body = { scenario, base_url: window.location.origin };
+  if (scenario === 'arrival') body.rate = parseInt(document.getElementById('rate').value, 10) || 15;
+
+  const res = await fetch('/api/loadtest/run', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+  });
+  const run = await res.json();
+  document.getElementById('k6Status').innerHTML =
+    `<span class="pill running">RUNNING</span> ${scenario} — this takes ~20-25s (k6 is really executing against this server)`;
+  poll(run.run_id, btn);
+}
+
+async function poll(runId, btn) {
+  const res = await fetch(`/api/loadtest/${runId}`);
+  const run = await res.json();
+  if (run.status === 'running') {
+    setTimeout(() => poll(runId, btn), 1500);
+    return;
+  }
+  btn.disabled = false;
+  document.getElementById('k6Status').innerHTML =
+    run.status === 'done'
+      ? `<span class="pill pass">FINISHED</span> ${run.scenario} run complete`
+      : `<span class="pill fail">ERROR</span> ${run.error || 'unknown error'}`;
+  refreshK6Table();
+}
+
+async function refreshK6Table() {
+  const res = await fetch('/api/loadtest');
+  const runs = await res.json();
+  const tbody = document.querySelector('#k6Table tbody');
+  tbody.innerHTML = runs.map(r => {
+    const s = r.summary || {};
+    const model = r.scenario === 'vus' ? 'Closed (VUs)' : `Open (${r.rate || '?'} req/s)`;
+    const statusPill = r.status === 'done'
+      ? '<span class="pill pass">done</span>'
+      : r.status === 'error'
+        ? '<span class="pill fail">error</span>'
+        : '<span class="pill running">running</span>';
+    const thresholdsPill = r.status === 'done'
+      ? (s.thresholds_ok ? '<span class="pill pass">PASS</span>' : '<span class="pill fail">FAIL</span>')
+      : '—';
+    return `<tr>
+      <td>${model}</td><td>${statusPill}</td>
+      <td>${s.p50_ms ? Math.round(s.p50_ms) + 'ms' : '—'}</td>
+      <td>${s.p95_ms ? Math.round(s.p95_ms) + 'ms' : '—'}</td>
+      <td>${s.p99_ms ? Math.round(s.p99_ms) + 'ms' : '—'}</td>
+      <td>${s.biz_success ?? '—'}</td>
+      <td>${s.biz_declined ?? '—'}</td>
+      <td>${s.infra_error ?? '—'}</td>
+      <td>${s.dropped_iterations ?? '—'}</td>
+      <td>${thresholdsPill}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function addJmeter() {
+  const label = document.getElementById('jmLabel').value || 'JMeter run';
+  const p95_ms = parseFloat(document.getElementById('jmP95').value) || 0;
+  const error_rate_pct = parseFloat(document.getElementById('jmErr').value) || 0;
+  const throughput_rps = parseFloat(document.getElementById('jmRps').value) || 0;
+  await fetch('/api/loadtest/jmeter', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({label, p95_ms, error_rate_pct, throughput_rps})
+  });
+  refreshJmeterTable();
+}
+
+async function refreshJmeterTable() {
+  const res = await fetch('/api/loadtest/jmeter/all');
+  const entries = await res.json();
+  const tbody = document.querySelector('#jmTable tbody');
+  tbody.innerHTML = entries.map(e => `<tr>
+    <td>${e.label}</td><td>${e.p95_ms}ms</td><td>${e.error_rate_pct}%</td><td>${e.throughput_rps} req/s</td>
+  </tr>`).join('');
+}
+
+refreshK6Table();
+refreshJmeterTable();
+</script>
+</body>
+</html>
