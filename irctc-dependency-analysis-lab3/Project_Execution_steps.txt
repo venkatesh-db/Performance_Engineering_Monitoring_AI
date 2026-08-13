@@ -1,0 +1,11 @@
+
+
+open -a Docker
+
+docker start irctc-redis-eviction
+
+docker start kafka-kafka-1
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/irctc-dependency-analysis-lab3" && source venv/bin/activate && uvicorn main:app --port 8006
+
+Open http://127.0.0.1:8006 in your browser.

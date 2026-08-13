@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IRCTC Dependency Analysis Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 950px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #0b5ed7; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#0b5ed7; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; margin-right:6px; margin-bottom:6px; }
+  button.alt { background:#1a7f37; }
+  button.danger { background:#c62828; }
+  input { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; width:80px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; white-space: pre-wrap; }
+  .ok { color:#1a7f37; } .warn { color:#b26a00; } .err { color:#c62828; }
+  table { width:100%; border-collapse: collapse; margin-top:12px; font-size: 12px; }
+  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid #eee; }
+  .hint { color:#888; font-size:12px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>IRCTC Dependency Analysis Lab</h1>
+<p class="subtitle">Day 2 / Module 3 — PostgreSQL EXPLAIN + index selectivity, Kafka partition parallelism, Redis hot keys/eviction, backpressure/retry amplification.</p>
+
+<div class="card">
+  <h2>1. PostgreSQL: EXPLAIN evidence + index selectivity cost</h2>
+  <p class="hint">Real <code>EXPLAIN (ANALYZE, FORMAT JSON)</code> against a 6,000-row availability table. The low-selectivity index on <code>is_active</code> (~95% true) should be IGNORED by the planner here — but still costs every write.</p>
+  <button onclick="runExplain()">Run EXPLAIN ANALYZE</button>
+  <div class="log" id="explainLog"></div>
+  <hr style="margin:14px 0; border:none; border-top:1px solid #eee;">
+  <button onclick="toggleIndex('create')">Create low-selectivity index</button>
+  <button class="alt" onclick="toggleIndex('drop')">Drop it</button>
+  <button onclick="bulkUpdate()">Time a 5,000-row bulk UPDATE</button>
+  <button onclick="indexStats()">Show real pg_stat_user_indexes (decisive evidence)</button>
+  <div class="log" id="indexLog"></div>
+  <table id="indexTable"><thead><tr><th>Index</th><th>Times used by planner</th><th>Rows read via index</th><th>Size (KB)</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>2. Kafka: partition parallelism vs. consumer lag</h2>
+  <p class="hint">Produces to a 1-partition topic and a 3-partition topic (same broker, reused from Module 4). Run <code>kafka/consumer_lag_test.py</code> against each from a terminal to see real lag differ — see CASE_STUDY.md for exact commands.</p>
+  <button onclick="kafkaProduce('availability.events.p1')">Produce 150 events to p1 topic</button>
+  <button class="alt" onclick="kafkaProduce('availability.events.p3')">Produce 150 events to p3 topic</button>
+  <div class="log" id="kafkaLog"></div>
+</div>
+
+<div class="card">
+  <h2>3. Redis: hot key + real eviction (isolated 3MB Redis on :6380)</h2>
+  <p class="hint">80% of requests hit ONE train ("12000"), the rest use distinct keys to pressure the tiny memory budget — real <code>evicted_keys</code> and hit ratio from Redis's own INFO stats.</p>
+  <button onclick="redisStorm()">Fire 200-request hot-key storm</button>
+  <button onclick="redisStats()">Refresh Redis stats</button>
+  <div class="log" id="redisLog"></div>
+  <table id="redisTable"><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>4. Backpressure: naive retries vs. backoff</h2>
+  <p class="hint">10 concurrent callers hit a Postgres pool capped at 3 connections with a 300ms query. Naive callers retry immediately with no cap; backoff callers wait exponentially and give up after 3 tries. Watch the amplification factor.</p>
+  <button onclick="retryStorm(true)">Fire naive retry storm</button>
+  <button class="alt" onclick="retryStorm(false)">Fire backoff retry storm</button>
+  <div class="log" id="retryLog"></div>
+</div>
+
+<div class="card">
+  <h2>Reset lab state</h2>
+  <button class="danger" onclick="resetLab()">Reset (restore is_active, flush Redis)</button>
+  <div class="log" id="resetLog"></div>
+</div>
+
+<script>
+async function runExplain() {
+  const log = document.getElementById('explainLog');
+  const res = await fetch('/api/admin/explain?train_no=12000&travel_date=2026-08-20');
+  const d = await res.json();
+  log.textContent =
+    `Query: ${d.query}\nNode type: ${d.node_type}${d.index_name ? ' (' + d.index_name + ')' : ' (SEQ SCAN)'}\n` +
+    `Planning time: ${d.planning_time_ms}ms, Execution time: ${d.execution_time_ms}ms, rows: ${d.actual_rows}`;
+}
+
+async function toggleIndex(action) {
+  const res = await fetch(`/api/admin/index/${action}`, {method: 'POST'});
+  const d = await res.json();
+  document.getElementById('indexLog').textContent = `low_selectivity_index_present: ${d.index_present}`;
+}
+
+async function bulkUpdate() {
+  const log = document.getElementById('indexLog');
+  log.textContent = 'running bulk update...';
+  const res = await fetch('/api/admin/bulk-update?rows=5000', {method: 'POST'});
+  const d = await res.json();
+  log.textContent = `Updated ${d.rows_updated} rows in ${d.elapsed_ms}ms (index present: ${d.low_selectivity_index_present})`;
+}
+
+async function indexStats() {
+  const res = await fetch('/api/admin/index/stats');
+  const rows = await res.json();
+  document.querySelector('#indexTable tbody').innerHTML = rows.map(r => `
+    <tr><td>${r.index}</td><td>${r.times_used_by_planner}</td><td>${r.rows_read_via_index}</td><td>${r.size_kb}</td></tr>
+  `).join('');
+}
+
+async function kafkaProduce(topic) {
+  const log = document.getElementById('kafkaLog');
+  log.textContent = `producing to ${topic}...`;
+  const res = await fetch(`/api/admin/kafka/produce?topic=${topic}&count=150&rate=50`, {method: 'POST'});
+  const d = await res.json();
+  log.textContent = `${topic}: sent=${d.sent} errors=${d.errors} in ${d.elapsed_s}s`;
+}
+
+async function redisStorm() {
+  const log = document.getElementById('redisLog');
+  log.textContent = 'firing hot-key storm...';
+  const res = await fetch('/api/admin/redis/hotkey-storm?count=200&hot_ratio=0.8', {method: 'POST'});
+  const d = await res.json();
+  log.textContent = `requests=${d.requests} hits=${d.hits} misses=${d.misses} hit_ratio=${d.hit_ratio}`;
+  redisStats();
+}
+
+async function redisStats() {
+  const res = await fetch('/api/admin/redis/stats');
+  const d = await res.json();
+  document.querySelector('#redisTable tbody').innerHTML = `
+    <tr><th>Used memory</th><td>${d.used_memory_mb} MB / ${d.maxmemory_mb} MB max</td></tr>
+    <tr><th>Keyspace hits / misses</th><td>${d.keyspace_hits} / ${d.keyspace_misses}</td></tr>
+    <tr><th>Evicted keys</th><td>${d.evicted_keys}</td></tr>
+    <tr><th>Eviction policy</th><td>${d.maxmemory_policy}</td></tr>
+  `;
+}
+
+async function retryStorm(naive) {
+  const log = document.getElementById('retryLog');
+  log.textContent = `firing ${naive ? 'naive' : 'backoff'} retry storm...`;
+  const res = await fetch(`/api/admin/retry-storm?concurrency=10&naive=${naive}`, {method: 'POST'});
+  const d = await res.json();
+  const cls = d.amplification_factor > 3 ? 'err' : 'ok';
+  log.innerHTML = `mode=${d.mode} concurrency=${d.concurrency} total_attempts=${d.total_attempts} ` +
+    `successes=${d.total_successes} <span class="${cls}">amplification_factor=${d.amplification_factor}x</span> ` +
+    `elapsed=${d.elapsed_s}s`;
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+  redisStats();
+}
+
+redisStats();
+</script>
+</body>
+</html>
