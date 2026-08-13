@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IRCTC Ticket Booking Profiling Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #0b5ed7; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#0b5ed7; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; }
+  button.danger { background:#c62828; }
+  input { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; }
+  .ok { color:#1a7f37; } .warn { color:#b26a00; } .err { color:#c62828; }
+  table { width:100%; border-collapse: collapse; margin-top:12px; font-size: 13px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; }
+  .hint { color:#888; font-size:12px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>IRCTC Ticket Booking Profiling Lab</h1>
+<p class="subtitle">Day 2 / Module 1 — CPU, memory, disk, and socket/FD signals for application + Linux performance analysis.</p>
+
+<div class="card">
+  <h2>1. Live process metrics (psutil — cross-platform stand-in for top/vmstat/iostat/pidstat/ss)</h2>
+  <button onclick="refreshMetrics()">Refresh</button>
+  <span class="hint">auto-refreshing every 2s — on the real training VM, run the Linux commands in CASE_STUDY.md alongside this</span>
+  <table id="metricsTable"><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>2. Book a ticket (CPU-bound seat allocation + disk fsync + unbounded waitlist)</h2>
+  <input id="trainNo" value="12345" placeholder="train no">
+  <input id="passengerName" value="A Kumar" placeholder="passenger name">
+  <button onclick="book()">Book</button>
+  <div class="log" id="bookLog"></div>
+</div>
+
+<div class="card">
+  <h2>3. Simulate Tatkal rush (fire N concurrent bookings)</h2>
+  <input id="rushCount" value="20" style="width:60px">
+  <button onclick="rush()">Fire rush</button>
+  <div class="log" id="rushLog"></div>
+</div>
+
+<div class="card">
+  <h2>4. Check PNR status (leaks a socket ~30% of the time)</h2>
+  <input id="pnrInput" placeholder="PNR (e.g. PNR00000001)">
+  <button onclick="checkPnr()">Check PNR</button>
+  <button onclick="pnrStorm()">Fire 15 PNR checks</button>
+  <div class="log" id="pnrLog"></div>
+</div>
+
+<div class="card">
+  <h2>Reset lab state</h2>
+  <button class="danger" onclick="resetLab()">Reset (clear waitlist, close leaked sockets, wipe log)</button>
+  <div class="log" id="resetLog"></div>
+</div>
+
+<script>
+async function refreshMetrics() {
+  const res = await fetch('/api/proc-metrics');
+  const m = await res.json();
+  const conns = Object.entries(m.connections_by_status).map(([k,v]) => `${k}:${v}`).join(', ') || 'none';
+  document.querySelector('#metricsTable tbody').innerHTML = `
+    <tr><th>CPU %</th><td>${m.cpu_percent}</td></tr>
+    <tr><th>Memory RSS</th><td>${m.memory_rss_mb} MB</td></tr>
+    <tr><th>Threads</th><td>${m.num_threads}</td></tr>
+    <tr><th>Open file descriptors</th><td>${m.num_fds}</td></tr>
+    <tr><th>Disk read/write</th><td>${m.io_read_mb ?? 'n/a'} MB / ${m.io_write_mb ?? 'n/a'} MB</td></tr>
+    <tr><th>Connections by status</th><td>${conns}</td></tr>
+    <tr><th>Waitlist size (memory growth)</th><td>${m.waitlist_size}</td></tr>
+    <tr><th>Leaked sockets</th><td>${m.leaked_sockets}</td></tr>
+  `;
+}
+
+async function book() {
+  const train_no = document.getElementById('trainNo').value;
+  const passenger_name = document.getElementById('passengerName').value;
+  const res = await fetch('/api/book', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({train_no, passenger_name})
+  });
+  const d = await res.json();
+  document.getElementById('bookLog').innerHTML =
+    `<span class="ok">${d.pnr}</span> seat=${d.seat} — CPU time=${d.cpu_ms}ms, disk write=${d.disk_ms}ms, waitlist size=${d.waitlist_size}`;
+  document.getElementById('pnrInput').value = d.pnr;
+  refreshMetrics();
+}
+
+async function rush() {
+  const n = parseInt(document.getElementById('rushCount').value, 10) || 20;
+  const log = document.getElementById('rushLog');
+  log.textContent = `firing ${n} concurrent bookings...`;
+  const t0 = performance.now();
+  const promises = Array.from({length: n}, (_, i) =>
+    fetch('/api/book', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({train_no: '12345', passenger_name: `Passenger-${i}`})
+    }).then(r => r.json())
+  );
+  const results = await Promise.all(promises);
+  const totalMs = (performance.now() - t0).toFixed(0);
+  const cpuTimes = results.map(r => r.cpu_ms).sort((a,b) => a-b);
+  log.innerHTML = `${n} bookings finished in ${totalMs}ms wall time.<br>` +
+    `Per-request CPU time: min=${cpuTimes[0]}ms max=${cpuTimes[cpuTimes.length-1]}ms<br>` +
+    `<span class="hint">Watch the metrics panel above (or top/vmstat on Linux) — CPU% should spike, and per-request time should grow as CPU saturates.</span>`;
+  refreshMetrics();
+}
+
+async function checkPnr() {
+  const pnr = document.getElementById('pnrInput').value;
+  if (!pnr) { alert('book a ticket first or enter a PNR'); return; }
+  const res = await fetch(`/api/pnr/${pnr}`);
+  const d = await res.json();
+  const cls = d.socket_leaked_this_call ? 'warn' : 'ok';
+  document.getElementById('pnrLog').innerHTML =
+    `${pnr}: <strong>${d.status}</strong> — gateway call=${d.gateway_ms}ms — ` +
+    `<span class="${cls}">socket leaked this call: ${d.socket_leaked_this_call}</span> — total leaked so far: ${d.total_leaked_sockets}`;
+  refreshMetrics();
+}
+
+async function pnrStorm() {
+  const log = document.getElementById('pnrLog');
+  log.textContent = 'firing 15 PNR checks...';
+  const promises = Array.from({length: 15}, (_, i) =>
+    fetch(`/api/pnr/PNR-STORM-${i}`).then(r => r.json())
+  );
+  const results = await Promise.all(promises);
+  const leaked = results.filter(r => r.socket_leaked_this_call).length;
+  log.innerHTML = `15 PNR checks done — ${leaked} leaked a socket this batch, ` +
+    `${results[results.length-1].total_leaked_sockets} leaked total. ` +
+    `<span class="hint">Watch "Open file descriptors" and "Connections by status" above climb.</span>`;
+  refreshMetrics();
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', { method: 'POST' });
+  document.getElementById('resetLog').textContent = 'reset done';
+  refreshMetrics();
+}
+
+refreshMetrics();
+setInterval(refreshMetrics, 2000);
+</script>
+</body>
+</html>

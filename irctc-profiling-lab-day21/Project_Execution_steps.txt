@@ -1,0 +1,6 @@
+
+1. Start the app:
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/irctc-profiling-lab-day21" && source venv/bin/activate && uvicorn main:app --port 8004
+
+2. Open http://127.0.0.1:8004 in your browser.
