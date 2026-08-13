@@ -1,0 +1,2777 @@
+
+
+Prompt 
+Role :Performance testers , Domain : Redbus  ,
+ Context : Production traffic analysis and business-transaction distribution  code in  python , requirement :Redbus   search activities need to tested with respect to Performance requirements and measurable acceptance criteria
+Throughput, response time, latency, RPS, TPS and concurrent users , Implemnattion:  tech stack : Python fastapi  , outcome :    search activities tested as role of senior principal archiect and senrior principal tester with usecases         Design:    https://www.redbus.in/ with respect to real behvaiour of teh product         Judgmnet :  its done by human with respect to the client or requirmemnt specificiation  give a prompt for claude  to implenent daya activites as :Performance testers
+
+Prompt for Claude (v2 — 9.5/10)
+
+You are acting as a Senior Principal Performance Test Architect with 15+ years of experience 
+designing enterprise-scale performance testing frameworks for high-traffic e-commerce/travel 
+booking platforms (bus/flight/train ticketing domain).
+
+CONTEXT:
+Client: Redbus (www.redbus.in) — India's largest online bus ticketing platform.
+Objective: Design and implement a production-grade performance testing suite for the 
+"Search Bus" user journey, based on realistic production traffic patterns and 
+business-transaction distribution (not synthetic/uniform load).
+
+SCOPE OF SEARCH ACTIVITY TO TEST:
+1. Home page load (city autosuggest / source-destination selection)
+2. Search API call (source, destination, date of journey)
+3. Search results rendering (bus list with operator, seat availability, fare, boarding points)
+4. Filters applied on search results (AC/Non-AC, price range, departure time, bus type, ratings)
+5. Sort operations (price, rating, departure time, duration)
+6. Seat layout fetch for a selected bus
+7. Boarding/dropping point fetch
+
+REQUIREMENTS — Build the following as a Python (FastAPI) based performance testing framework:
+
+1. TRAFFIC MODEL / BUSINESS TRANSACTION DISTRIBUTION
+   - Define a realistic transaction mix based on production analytics assumptions, e.g.:
+     - 40% Search API calls
+     - 25% Filter/Sort operations
+     - 20% Seat layout fetch
+     - 10% Boarding point fetch
+     - 5% Autosuggest calls
+   - Model route popularity as a Pareto/long-tail distribution across the top ~20 city pairs 
+     (e.g., Bangalore–Chennai, Hyderabad–Vijayawada, Mumbai–Pune, Delhi–Jaipur) rather than 
+     uniform random source-destination selection — reflecting real demand concentration
+   - Model peak vs off-peak traffic (festival season, weekend spikes, weekday troughs, 
+     time-of-day booking curves e.g. 9-11 AM and 6-9 PM surges)
+   - Include a configurable ramp-up/steady-state/ramp-down load profile
+
+2. TEST DESIGN (as Senior Principal Architect)
+   - Provide a test architecture diagram description (load generator -> API gateway -> 
+     search service -> cache -> DB/inventory service)
+   - JUSTIFY your choice of load-generation engine — pure Python asyncio+httpx vs Locust 
+     vs k6 — based on target concurrency (state your reasoning for scale ranges, e.g. 
+     "<1000 VUs: asyncio sufficient; >5000 VUs: distributed Locust/k6 workers required")
+   - Identify critical business transactions (CBTs) for Redbus search flow
+   - Define workload model: concurrent users, think-time, pacing, session correlation 
+     (route search -> select bus -> seat -> boarding point as one user journey, not isolated calls)
+
+3. ACCEPTANCE CRITERIA — DERIVE, DON'T ASSUME
+   - Do not invent arbitrary thresholds. For each metric, state the BUSINESS RATIONALE 
+     driving the number, e.g.:
+     - "Search API p95 < 800ms — derived from mobile 3G abandonment research showing 
+       >1s response drives >20% bounce on low-bandwidth connections typical of Tier-2/3 
+       India users"
+     - "Seat layout fetch p95 < 500ms — must complete within perceived-instant UI threshold 
+       (Nielsen's 1-second response guideline) since it's mid-funnel, high-intent"
+   - Provide the full metric table: Throughput (RPS/TPS per transaction), Response Time 
+     (p50/p90/p95/p99), Concurrency (target VUs), Error rate (<0.1%), Latency budget 
+     breakdown (network / app / cache / DB), Resource ceilings (CPU <70%, memory <75%, 
+     DB pool <80%)
+   - Where no client SLA is given, explicitly flag the number as an "assumed baseline — 
+     to be validated against actual Redbus SLA/NFR document" rather than presenting it as fact
+
+4. FAILURE-MODE & DEGRADED-STATE SCENARIOS (not just happy path)
+   - Search timeout / upstream inventory service slow response
+   - Cache-miss storm (cold cache after deployment, TTL expiry stampede)
+   - Partial inventory response (some operators' data unavailable — graceful degradation)
+   - Downstream seat-layout service failure during high concurrency
+   - Define expected behavior and acceptance thresholds for each (e.g., circuit breaker 
+     trips within Xms, fallback to cached results, error rate stays within SLA under 
+     partial degradation)
+
+5. IMPLEMENTATION (Python + FastAPI)
+   - Build a FastAPI-based load orchestration/test-harness service that:
+     a. Exposes endpoints to trigger test scenarios (smoke, load, stress, soak, spike)
+     b. Uses the justified load-generation approach (asyncio/httpx or Locust integration) 
+        to simulate concurrent user journeys
+     c. Implements the weighted business-transaction distribution + Pareto route model
+     d. Injects failure-mode scenarios (timeout simulation, degraded response simulation)
+     e. Captures per-transaction metrics: response time, status code, timestamp
+     f. Exposes a /metrics endpoint (Prometheus-compatible) for RPS, TPS, latency 
+        percentiles, error rate, active virtual users
+     g. Logs structured results (JSON/CSV) for post-run analysis
+
+6. TEST SCENARIOS TO IMPLEMENT
+   - Smoke test (1 user, validate correctness)
+   - Load test (expected peak concurrent users, steady state 30-60 min)
+   - Stress test (breakpoint identification — increase load until failure/degradation)
+   - Soak/Endurance test (extended duration, memory leak / degradation detection)
+   - Spike test (sudden traffic surge — e.g., flash sale/festival booking rush)
+
+7. BOTTLENECK ANALYSIS & OBSERVABILITY CORRELATION
+   - Describe how test-harness metrics correlate with backend observability: 
+     OpenTelemetry traces, APM (e.g., Datadog/New Relic style spans), Grafana dashboards
+   - Show how a specific test result (e.g., p99 spike at 3000 VUs) would be traced back 
+     to a root cause (e.g., DB connection pool exhaustion vs cache eviction vs GC pause) 
+     using distributed tracing correlation IDs
+
+8. DELIVERABLES
+   - Architecture & workload model summary
+   - Acceptance criteria table with business rationale column
+   - Complete Python implementation (FastAPI test harness + metrics + scenario runner 
+     + failure-injection)
+   - Sample config file (YAML) for a load profile
+   - Sample test execution report structure
+   - Bottleneck analysis / observability correlation walkthrough
+
+CONSTRAINTS:
+- Code must be modular, reusable, and configuration-driven (YAML/JSON config for load profiles)
+- Follow FastAPI + async best practices
+- Include docstrings and inline comments explaining performance-engineering rationale
+- Do NOT hardcode Redbus production endpoints — use placeholder/mock endpoints, since this 
+  is for framework design and reference implementation, not for testing the live production 
+  site without authorization
+- Final human sign-off / acceptance judgment against actual client NFR specification is 
+  explicitly out of scope for the AI — flag this as a required manual review gate
+
+OUTPUT FORMAT:
+1. Architecture & workload model summary (with load-engine justification)
+2. Acceptance criteria table (metric | target | business rationale | assumed/confirmed)
+3. Failure-mode scenario table (scenario | expected behavior | threshold)
+4. Full Python implementation (FastAPI test harness + metrics + scenario runner)
+5. Sample config file (YAML) for a load profile
+6. Sample report/output structure
+7. Bottleneck analysis / observability correlation walkthrough
+
+
+GitHub Copilot/Copilot Coding Agent
+
+# GitHub Copilot — Senior Principal Performance Engineering Implementation Prompt
+
+## ROLE
+
+Act as a:
+
+* Senior Principal Performance Architect
+* Senior Principal Performance Test Engineer
+* Senior Performance Automation Engineer
+* Performance Engineering Technical Lead
+
+You are implementing a **production-grade performance engineering framework** for the **RedBus-style bus search domain**.
+
+Technology stack:
+
+* Python 3.11+
+* FastAPI
+* Pydantic
+* asyncio
+* httpx
+* pytest
+* Locust
+* Pandas
+* NumPy
+* SQLAlchemy
+* PostgreSQL
+* Redis where appropriate
+* Prometheus
+* Grafana
+* Docker
+* Docker Compose
+
+The implementation must be maintainable, extensible, testable and suitable for enterprise CI/CD.
+
+---
+
+# IMPORTANT EXECUTION RULE
+
+Before writing code:
+
+1. Inspect the complete repository.
+2. Identify the existing application structure.
+3. Identify existing Python/FastAPI components.
+4. Identify existing tests.
+5. Identify configuration mechanisms.
+6. Identify database models.
+7. Identify logging and monitoring.
+8. Identify existing performance-testing code.
+9. Reuse existing components where appropriate.
+10. Do not unnecessarily rewrite working code.
+
+Create an implementation plan first.
+
+Then implement the solution incrementally.
+
+---
+
+# BUSINESS DOMAIN
+
+The domain is a **RedBus-style online bus-booking/search application**.
+
+Reference product behaviour:
+
+https://www.redbus.in/
+
+Use the public website only as a reference for understanding user-visible business behaviour.
+
+Do NOT assume access to RedBus private APIs, internal architecture, databases, queues, caches, or production infrastructure.
+
+Do NOT generate uncontrolled load against the public RedBus website.
+
+The framework must support:
+
+* local environment
+* development environment
+* QA
+* staging
+* authorized performance environments
+* synthetic/mock APIs
+* authorized anonymized production traffic
+
+---
+
+# PRIMARY OBJECTIVE
+
+Implement a performance-testing framework for:
+
+> BUS SEARCH ACTIVITIES
+
+The framework must determine whether search-related business transactions satisfy measurable client performance requirements.
+
+The implementation must measure:
+
+* Throughput
+* RPS
+* TPS
+* Concurrent users
+* Response time
+* Latency
+* Average response time
+* P50
+* P90
+* P95
+* P99
+* Maximum response time
+* Minimum response time
+* Error rate
+* Timeout rate
+* Successful transactions
+* Failed transactions
+* HTTP status-code distribution
+
+Where infrastructure telemetry exists, additionally measure:
+
+* CPU
+* Memory
+* Network
+* Database latency
+* Database connection pool
+* Dependency latency
+
+---
+
+# PERFORMANCE ENGINEERING MODEL
+
+Maintain a strict distinction between:
+
+```text
+USER
+SESSION
+BUSINESS TRANSACTION
+HTTP REQUEST
+```
+
+Example:
+
+```text
+1 User
+   |
+   +-- 1 Session
+          |
+          +-- Search Transaction
+                  |
+                  +-- Request 1
+                  +-- Request 2
+                  +-- Request 3
+                  +-- Request 4
+```
+
+Do not equate:
+
+```text
+RPS = TPS
+```
+
+unless the transaction contains exactly one HTTP request.
+
+If:
+
+```text
+1 transaction = 5 HTTP requests
+```
+
+then:
+
+```text
+RPS ? TPS × 5
+```
+
+Make this configurable.
+
+---
+
+# SEARCH BUSINESS USE CASES
+
+Implement these business transactions.
+
+## UC01 — Basic Search
+
+User behaviour:
+
+```text
+Open search
+Enter source
+Enter destination
+Select travel date
+Execute search
+Receive search results
+```
+
+Measure:
+
+```text
+Search TPS
+Search RPS
+Search response time
+Search latency
+Search P95
+Search P99
+Search error rate
+```
+
+---
+
+## UC02 — Search + Filter
+
+User:
+
+```text
+Search
+Receive results
+Apply bus-type filter
+Apply AC/Non-AC filter
+```
+
+Measure the complete business transaction.
+
+---
+
+## UC03 — Search + Sort
+
+User:
+
+```text
+Search
+Receive results
+Sort by price
+Sort by departure time
+```
+
+Measure search and sorting separately.
+
+---
+
+## UC04 — Search + Date Change
+
+User:
+
+```text
+Search
+Change travel date
+Search again
+```
+
+Measure:
+
+```text
+First search
+Second search
+Complete journey
+```
+
+---
+
+## UC05 — Repeat Search
+
+Model realistic users who change their search.
+
+Example:
+
+```text
+Mumbai ? Pune
+Mumbai ? Nashik
+Mumbai ? Goa
+```
+
+Do not hard-code these as real production traffic statistics.
+
+Make routes configurable.
+
+---
+
+## UC06 — Search ? Bus Selection
+
+User:
+
+```text
+Search
+View results
+Select bus
+```
+
+Measure the search-to-selection transaction.
+
+---
+
+# REALISTIC USER BEHAVIOUR
+
+Do not create a simplistic loop:
+
+```python
+while True:
+    search()
+```
+
+Implement realistic user behaviour.
+
+Each virtual user should have:
+
+* think time
+* variable think time
+* source selection
+* destination selection
+* travel-date selection
+* search
+* optional filtering
+* optional sorting
+* optional repeat search
+* optional bus selection
+* session termination
+
+Example:
+
+```text
+Open Search
+    ?
+Think 1–3 seconds
+    ?
+Enter Source
+    ?
+Think 0.5–2 seconds
+    ?
+Enter Destination
+    ?
+Think 0.5–2 seconds
+    ?
+Search
+    ?
+Think 2–8 seconds
+    ?
+Filter / Sort / Select
+```
+
+Think times must be configurable.
+
+Use randomized distributions instead of fixed delays.
+
+---
+
+# TRAFFIC DISTRIBUTION
+
+Implement configuration-driven transaction distribution.
+
+Example only:
+
+```yaml
+traffic_distribution:
+
+  search:
+    percentage: 60
+
+  search_filter:
+    percentage: 15
+
+  search_sort:
+    percentage: 10
+
+  search_date_change:
+    percentage: 5
+
+  search_bus_selection:
+    percentage: 5
+
+  repeat_search:
+    percentage: 5
+```
+
+Validate:
+
+```text
+sum(percentages) == 100
+```
+
+These numbers are examples only.
+
+Never claim they represent actual RedBus production traffic.
+
+The system must support importing actual authorized/anonymized production traffic distributions.
+
+---
+
+# PRODUCTION TRAFFIC ANALYSIS
+
+Implement a production traffic analyzer.
+
+Input may be:
+
+```csv
+timestamp,transaction,endpoint,status_code,response_time_ms
+2026-08-13T10:00:01,search,/search,200,620
+2026-08-13T10:00:02,search,/search,200,710
+2026-08-13T10:00:03,search,/search,500,2500
+```
+
+The analyzer must calculate:
+
+```text
+Total requests
+Requests/minute
+Requests/second
+Peak RPS
+Average RPS
+Peak TPS
+Average TPS
+Transaction distribution
+Response-time distribution
+Error distribution
+Status-code distribution
+```
+
+Calculate traffic distribution by:
+
+```text
+transaction
+endpoint
+hour
+minute
+status code
+```
+
+---
+
+# PRODUCTION TRAFFIC ? PERFORMANCE TEST MODEL
+
+Create a transformation layer:
+
+```text
+Production Traffic
+       ?
+Traffic Analysis
+       ?
+Business Transaction Distribution
+       ?
+Peak RPS
+       ?
+Peak TPS
+       ?
+Concurrent User Model
+       ?
+Synthetic Workload
+       ?
+Performance Test
+```
+
+Example:
+
+If authorized traffic analysis produces:
+
+```text
+Peak RPS = 800
+```
+
+and:
+
+```text
+Search = 65%
+Filter = 15%
+Sort = 10%
+Date Change = 5%
+Selection = 5%
+```
+
+calculate:
+
+```text
+Search = 520 RPS
+Filter = 120 RPS
+Sort = 80 RPS
+Date Change = 40 RPS
+Selection = 40 RPS
+```
+
+Do not hard-code these numbers.
+
+---
+
+# RPS / TPS / CONCURRENCY
+
+Implement utilities for calculating:
+
+```text
+RPS
+TPS
+Concurrent Users
+```
+
+Support Little's Law:
+
+```text
+Concurrency ? Throughput × Response Time
+```
+
+Example:
+
+```text
+TPS = 100
+Average transaction duration = 2 seconds
+
+Estimated concurrency ? 200 users
+```
+
+Clearly label calculated concurrency as an estimate.
+
+Do not confuse:
+
+```text
+Configured concurrency
+```
+
+with:
+
+```text
+Observed concurrency
+```
+
+---
+
+# LOAD PROFILES
+
+Implement configurable profiles.
+
+## BASELINE
+
+Validate normal behaviour at low traffic.
+
+## NORMAL
+
+Represent expected average traffic.
+
+## PEAK
+
+Represent expected maximum business traffic.
+
+## STRESS
+
+Increase beyond expected peak.
+
+Example:
+
+```text
+Peak × 1.5
+```
+
+## SPIKE
+
+Suddenly increase traffic.
+
+Example:
+
+```text
+20% ? 100%
+```
+
+## SOAK
+
+Run at sustained high traffic.
+
+Example:
+
+```text
+70–80% peak
+```
+
+for an extended duration.
+
+## CAPACITY
+
+Increase traffic step-by-step until the system reaches a defined capacity boundary.
+
+---
+
+# PERFORMANCE REQUIREMENTS
+
+Create configuration-driven requirements.
+
+Example:
+
+```yaml
+performance_requirements:
+
+  search:
+    required_p95_ms: 1500
+    required_p99_ms: 2500
+    max_error_rate_percent: 1.0
+    minimum_tps: 100
+
+  search_filter:
+    required_p95_ms: 2000
+    required_p99_ms: 3000
+    max_error_rate_percent: 1.0
+
+  search_sort:
+    required_p95_ms: 1800
+    required_p99_ms: 2800
+    max_error_rate_percent: 1.0
+```
+
+IMPORTANT:
+
+These are example acceptance criteria.
+
+Do not present them as official RedBus requirements.
+
+The framework must support client-specific requirements.
+
+If actual requirements are not supplied:
+
+```text
+CLIENT INPUT REQUIRED
+```
+
+must be reported.
+
+---
+
+# ACCEPTANCE CRITERIA ENGINE
+
+Implement automated evaluation.
+
+Example:
+
+```python
+passed = (
+    p95_ms <= required_p95_ms
+    and p99_ms <= required_p99_ms
+    and error_rate <= max_error_rate
+    and actual_tps >= minimum_tps
+)
+```
+
+Produce:
+
+```json
+{
+  "transaction": "search",
+  "actual_tps": 125.4,
+  "required_tps": 100,
+  "p95_ms": 1420,
+  "required_p95_ms": 1500,
+  "p99_ms": 2240,
+  "required_p99_ms": 2500,
+  "error_rate_percent": 0.72,
+  "max_error_rate_percent": 1.0,
+  "status": "PASS"
+}
+```
+
+---
+
+# HUMAN ENGINEERING JUDGEMENT
+
+The framework must distinguish:
+
+```text
+AUTOMATED PERFORMANCE RESULT
+```
+
+from:
+
+```text
+ENGINEERING JUDGEMENT
+```
+
+Automated result:
+
+```text
+PASS
+FAIL
+```
+
+Human assessment:
+
+```text
+ACCEPTABLE
+ACCEPTABLE WITH RISK
+NOT ACCEPTABLE
+REQUIRES INVESTIGATION
+CLIENT DECISION REQUIRED
+```
+
+Do not automatically claim production readiness.
+
+The final engineering judgement must consider:
+
+* SLA compliance
+* P95
+* P99
+* throughput
+* error rate
+* concurrency
+* capacity headroom
+* dependency behaviour
+* resource utilization
+* test duration
+* workload realism
+* traffic distribution
+* business criticality
+
+---
+
+# FASTAPI APPLICATION
+
+Implement these APIs:
+
+```text
+POST /api/v1/traffic/run
+POST /api/v1/traffic/stop
+
+GET /api/v1/traffic/status
+
+POST /api/v1/scenarios/run
+GET /api/v1/scenarios/{scenario_id}
+
+POST /api/v1/production-traffic/import
+POST /api/v1/production-traffic/analyze
+
+GET /api/v1/results/{run_id}
+
+GET /api/v1/results/{run_id}/metrics
+
+GET /api/v1/results/{run_id}/acceptance
+
+GET /api/v1/results/{run_id}/report
+
+GET /health
+GET /ready
+GET /metrics
+```
+
+Use:
+
+* Pydantic models
+* validation
+* dependency injection
+* structured logging
+* error handling
+* async APIs where appropriate
+
+---
+
+# REQUEST EXAMPLE
+
+Support:
+
+```http
+POST /api/v1/traffic/run
+```
+
+with:
+
+```json
+{
+  "scenario": "peak",
+  "duration_seconds": 300,
+  "target_rps": 500,
+  "target_tps": 100,
+  "concurrent_users": 500
+}
+```
+
+Validate whether these values are mathematically and operationally consistent.
+
+Return:
+
+```json
+{
+  "run_id": "RUN-001",
+  "status": "STARTED"
+}
+```
+
+---
+
+# METRICS
+
+Capture at request level:
+
+```text
+run_id
+timestamp
+session_id
+user_id
+scenario
+business_transaction
+endpoint
+HTTP method
+status code
+response time
+latency
+success
+error type
+request size
+response size
+```
+
+Where technically available:
+
+```text
+DNS duration
+TCP duration
+TLS duration
+TTFB
+server processing duration
+```
+
+---
+
+# PERCENTILE CALCULATION
+
+Implement reliable percentile calculations.
+
+Required:
+
+```text
+P50
+P90
+P95
+P99
+```
+
+Do not calculate percentiles from averages.
+
+Percentiles must be calculated from actual response-time observations.
+
+---
+
+# ERROR CLASSIFICATION
+
+Classify errors:
+
+```text
+4xx
+5xx
+timeout
+connection error
+DNS error
+TLS error
+application error
+dependency error
+unknown
+```
+
+Produce:
+
+```text
+total errors
+error rate
+errors by transaction
+errors by endpoint
+errors by status code
+```
+
+---
+
+# BOTTLENECK ANALYSIS
+
+Create rule-based analysis.
+
+Examples:
+
+```text
+High CPU + increasing response time
+? potential CPU saturation
+
+High database latency
+? possible database bottleneck
+
+High dependency latency
+? possible downstream dependency bottleneck
+
+P50 normal + P99 very high
+? tail-latency problem
+
+Increasing errors at increasing RPS
+? possible capacity boundary
+
+High connection wait
+? possible connection-pool limitation
+```
+
+Never state a root cause without supporting evidence.
+
+Use:
+
+```text
+Potential bottleneck
+Likely bottleneck
+Evidence required
+```
+
+---
+
+# REPORTING
+
+Generate a performance report.
+
+Required sections:
+
+## 1. Executive Summary
+
+```text
+Test
+Scenario
+Duration
+Peak RPS
+Peak TPS
+Peak concurrency
+P95
+P99
+Error rate
+Overall result
+```
+
+## 2. Business Transaction Results
+
+```text
+Transaction
+TPS
+RPS
+P50
+P95
+P99
+Error %
+SLA
+Result
+```
+
+## 3. Capacity Analysis
+
+Show:
+
+```text
+Load level
+RPS
+TPS
+Concurrency
+P95
+P99
+Error rate
+CPU
+Memory
+```
+
+## 4. Requirement Validation
+
+For every requirement:
+
+```text
+Requirement
+Actual
+Threshold
+Variance
+PASS/FAIL
+```
+
+## 5. Engineering Assessment
+
+Include:
+
+```text
+Observed behaviour
+Performance risks
+Potential bottlenecks
+Capacity concerns
+Recommended actions
+```
+
+## 6. Human Judgement
+
+Explicitly include:
+
+```text
+Senior Principal Performance Engineering Assessment
+```
+
+---
+
+# PROJECT STRUCTURE
+
+Create a clean architecture similar to:
+
+```text
+performance-platform/
+?
+??? app/
+?   ??? main.py
+?   ?
+?   ??? api/
+?   ?   ??? traffic.py
+?   ?   ??? scenarios.py
+?   ?   ??? production_traffic.py
+?   ?   ??? results.py
+?   ?   ??? health.py
+?   ?
+?   ??? domain/
+?   ?   ??? transactions.py
+?   ?   ??? scenarios.py
+?   ?   ??? requirements.py
+?   ?   ??? assessments.py
+?   ?
+?   ??? performance/
+?   ?   ??? load_generator.py
+?   ?   ??? traffic_model.py
+?   ?   ??? metrics.py
+?   ?   ??? percentiles.py
+?   ?   ??? capacity.py
+?   ?
+?   ??? analytics/
+?   ?   ??? production_analysis.py
+?   ?   ??? distribution.py
+?   ?   ??? traffic_model_builder.py
+?   ?
+?   ??? reporting/
+?   ?   ??? report_generator.py
+?   ?   ??? acceptance_report.py
+?   ?
+?   ??? models/
+?   ?   ??? database.py
+?   ?   ??? schemas.py
+?   ?
+?   ??? config/
+?   ?   ??? settings.py
+?   ?
+?   ??? observability/
+?       ??? logging.py
+?       ??? metrics.py
+?
+??? tests/
+?   ??? unit/
+?   ??? integration/
+?   ??? performance/
+?
+??? locust/
+?   ??? search_workload.py
+?
+??? config/
+?   ??? performance.yaml
+?   ??? traffic.yaml
+?   ??? scenarios.yaml
+?
+??? sample-data/
+?   ??? production-traffic.csv
+?
+??? docker/
+?
+??? docker-compose.yml
+??? Dockerfile
+??? requirements.txt
+??? pyproject.toml
+??? README.md
+```
+
+Adapt this structure to the existing repository instead of blindly creating it.
+
+---
+
+# LOCUST IMPLEMENTATION
+
+Create realistic Locust workloads.
+
+Implement separate tasks for:
+
+```text
+search
+search_filter
+search_sort
+search_date_change
+search_bus_selection
+repeat_search
+```
+
+Use configurable task weights.
+
+Example:
+
+```python
+@task(60)
+def search():
+    ...
+
+@task(15)
+def search_filter():
+    ...
+```
+
+Do not hard-code production assumptions.
+
+Load task weights from configuration where practical.
+
+---
+
+# SYNTHETIC TEST API
+
+Because the real production service must not be load-tested without authorization, implement a local/mock search API.
+
+Example:
+
+```text
+GET /mock/search
+```
+
+It should simulate:
+
+* normal response
+* slow response
+* error response
+* timeout
+* variable response latency
+
+Configuration:
+
+```yaml
+mock_backend:
+  base_latency_ms: 500
+  jitter_ms: 100
+  error_rate_percent: 0.5
+```
+
+This allows the complete performance framework to be executed locally.
+
+---
+
+# OBSERVABILITY
+
+Expose Prometheus metrics.
+
+Required metrics:
+
+```text
+performance_requests_total
+performance_request_duration_seconds
+performance_transactions_total
+performance_transaction_duration_seconds
+performance_errors_total
+performance_active_users
+performance_rps
+performance_tps
+```
+
+Use labels carefully to avoid high-cardinality metrics.
+
+Do NOT put:
+
+```text
+user_id
+session_id
+full URL
+query parameters
+```
+
+into Prometheus labels.
+
+---
+
+# DATABASE
+
+Persist:
+
+```text
+test run
+scenario
+transaction
+request metrics
+aggregated metrics
+requirements
+acceptance results
+engineering assessment
+```
+
+Use SQLAlchemy.
+
+PostgreSQL should be supported.
+
+SQLite may be used for local development/testing.
+
+---
+
+# TESTING
+
+Implement:
+
+## Unit tests
+
+Test:
+
+* RPS calculation
+* TPS calculation
+* concurrency calculation
+* traffic distribution
+* percentile calculation
+* SLA evaluation
+* error-rate calculation
+* production traffic aggregation
+
+## Integration tests
+
+Test:
+
+* FastAPI endpoints
+* database persistence
+* traffic analyzer
+* report generation
+
+## Performance tests
+
+Test the performance platform itself.
+
+The monitoring/reporting platform must not become the bottleneck.
+
+---
+
+# CI/CD
+
+Provide GitHub Actions for:
+
+```text
+lint
+type checking
+unit tests
+integration tests
+build
+security checks
+```
+
+Performance tests should be separated from normal CI unless explicitly configured.
+
+Provide a workflow that can be triggered manually for authorized performance environments.
+
+---
+
+# SECURITY
+
+Implement:
+
+* environment-based secrets
+* no credentials in source code
+* no production data committed to Git
+* sanitized logs
+* PII-safe traffic analysis
+* configurable authentication
+* input validation
+
+Production traffic must be anonymized before persistence.
+
+Do not store:
+
+```text
+names
+phone numbers
+email addresses
+payment information
+authentication tokens
+session cookies
+```
+
+unless explicitly required and approved.
+
+---
+
+# README
+
+Create comprehensive documentation covering:
+
+1. Architecture
+2. Installation
+3. Configuration
+4. Running FastAPI
+5. Running mock backend
+6. Running Locust
+7. Running baseline
+8. Running peak
+9. Running stress
+10. Running soak
+11. Importing production traffic
+12. Calculating traffic distribution
+13. RPS/TPS/concurrency
+14. SLA configuration
+15. Acceptance criteria
+16. Report generation
+17. Prometheus
+18. Grafana
+19. CI/CD
+20. Troubleshooting
+
+---
+
+# REQUIRED OUTPUT FROM COPILOT
+
+After implementation, provide:
+
+## A. Architecture Summary
+
+Explain the implemented architecture.
+
+## B. Files Created
+
+List every new file.
+
+## C. Files Modified
+
+List every modified file.
+
+## D. How to Run
+
+Provide exact commands.
+
+Example:
+
+```bash
+python -m venv .venv
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Then:
+
+```bash
+locust -f locust/search_workload.py
+```
+
+## E. Example Test
+
+Show:
+
+```text
+Scenario
+Users
+Duration
+Target RPS
+Target TPS
+Transaction distribution
+```
+
+## F. Example Results
+
+Show:
+
+```text
+RPS
+TPS
+Concurrency
+P50
+P95
+P99
+Error %
+```
+
+## G. Acceptance Decision
+
+Show how the framework determines:
+
+```text
+PASS
+FAIL
+CLIENT DECISION REQUIRED
+```
+
+---
+
+# CRITICAL PERFORMANCE ENGINEERING PRINCIPLES
+
+Follow these principles throughout implementation:
+
+1. Do not confuse RPS with TPS.
+2. Do not use average response time as the only performance criterion.
+3. Always report P95 and P99.
+4. Measure business transactions separately from HTTP requests.
+5. Model realistic user behaviour.
+6. Use production traffic only when authorized.
+7. Separate production observations from synthetic assumptions.
+8. Never invent client SLAs.
+9. Separate automated acceptance from human engineering judgement.
+10. Always identify the workload used for every result.
+11. Always identify concurrency.
+12. Always identify traffic distribution.
+13. Always identify test duration.
+14. Always identify the performance environment.
+15. Never claim production readiness solely from one successful test.
+
+---
+
+# FINAL ACCEPTANCE MODEL
+
+The final report must answer:
+
+```text
+Can the Search business transaction handle the required:
+
+Throughput?
+RPS?
+TPS?
+Concurrent Users?
+
+while satisfying:
+
+Response Time?
+Latency?
+P95?
+P99?
+Error Rate?
+
+under:
+
+Normal?
+Peak?
+Stress?
+Spike?
+Soak?
+
+traffic?
+```
+
+The final conclusion must use one of:
+
+```text
+PASS — Requirements satisfied
+
+PASS WITH RISK — Requirements satisfied but performance risks exist
+
+FAIL — Requirements not satisfied
+
+INCONCLUSIVE — Insufficient evidence
+
+CLIENT DECISION REQUIRED — Requirements/SLA missing
+```
+
+The final decision must be traceable to measurable evidence.
+
+---
+
+# HUMAN JUDGEMENT
+
+The system is an engineering decision-support platform.
+
+Do not pretend that automated metrics replace a Senior Principal Performance Engineer.
+
+The final assessment should contain:
+
+```text
+Automated Measurement
++
+Requirement Comparison
++
+Capacity Analysis
++
+Risk Analysis
++
+Senior Principal Engineering Judgement
+```
+
+The human reviewer must be able to override the automated recommendation with a reason.
+
+Example:
+
+```json
+{
+  "automated_result": "PASS",
+  "engineering_judgement": "PASS_WITH_RISK",
+  "reason": "P99 is within SLA but shows increasing tail latency as concurrency approaches peak capacity.",
+  "reviewer": "Senior Principal Performance Engineer"
+}
+```
+
+Implement this separation explicitly in the domain model and reporting layer.
+
+---
+
+# START NOW
+
+First inspect the repository.
+
+Then:
+
+1. Create the implementation plan.
+2. Identify gaps.
+3. Implement the domain model.
+4. Implement traffic modelling.
+5. Implement production traffic analysis.
+6. Implement the FastAPI APIs.
+7. Implement synthetic/mock search services.
+8. Implement Locust workloads.
+9. Implement metrics.
+10. Implement SLA/acceptance evaluation.
+11. Implement capacity analysis.
+12. Implement reporting.
+13. Implement tests.
+14. Implement Docker support.
+15. Implement CI/CD.
+16. Update README.
+17. Run tests.
+18. Fix failures.
+19. Provide final implementation summary.
+
+Do not stop at pseudocode.
+
+Produce working Python code suitable for execution in the repository.
+
+If a requirement is unknown, do not invent it. Mark it as:
+
+`CLIENT INPUT REQUIRED`
+
+and continue with configurable example values clearly labelled as examples.
+
+
+Prompt 1 — Analyze
+
+Inspect this repository against the attached master performance-engineering requirements. Do not modify code yet. Identify the existing architecture, reusable components, gaps, dependencies, and propose an implementation plan.
+
+Prompt 2 — Implement
+
+Implement the approved plan incrementally. Start with the domain models, configuration, traffic model, RPS/TPS/concurrency calculations, and acceptance-criteria engine. Run tests after each logical component.
+
+Prompt 3 — Performance workload
+
+Implement the RedBus-style search business transactions and realistic user behaviour using the approved mock/staging endpoint. Implement Locust workloads with configurable transaction distribution and think time.
+
+Prompt 4 — Production analysis
+
+Implement authorized production-traffic analysis from anonymized CSV/JSON data. Derive transaction distribution, peak RPS/TPS, and a configurable synthetic workload without exposing or persisting PII.
+
+Prompt 5 — Principal review
+
+Act as a Senior Principal Performance Architect. Review the implementation for incorrect RPS/TPS/concurrency calculations, unrealistic workload modelling, missing P95/P99 analysis, invalid SLA assumptions, measurement errors, and production-readiness risks. Fix the identified issues and add tests.
+
+Codex /chatgpt 
+
+# Role
+
+Act as a **Senior Principal Performance Architect + Senior Principal Performance Test Engineer + Performance Engineering Lead**.
+
+You are designing and implementing a production-grade **performance testing and production-traffic-analysis platform** for the **RedBus bus-search business domain**.
+
+Technology stack:
+
+* Python 3.11+
+* FastAPI
+* Pydantic
+* AsyncIO / HTTPX
+* Pytest
+* Locust or an equivalent load-generation framework where appropriate
+* Pandas / NumPy for analysis
+* SQLAlchemy
+* PostgreSQL
+* Redis where useful
+* Prometheus-compatible metrics
+* Grafana-compatible dashboards
+* Docker / Docker Compose
+* Structured JSON logging
+* OpenTelemetry-compatible tracing where appropriate
+
+The implementation must be modular, testable, configurable, observable, and suitable for CI/CD.
+
+---
+
+# Business Domain
+
+Model realistic RedBus-style user journeys around **bus search**.
+
+Do not assume that every user behaves identically.
+
+The performance model must represent realistic business traffic distribution.
+
+Primary business activity:
+
+1. Open search page
+2. Enter source
+3. Enter destination
+4. Select journey date
+5. Execute search
+6. Receive search results
+7. Apply filters
+8. Sort results
+9. Change date
+10. Perform another search
+11. Select a bus
+12. Continue toward seat-selection/booking flow
+
+The primary scope for this implementation is:
+
+> **Search activity and the downstream operations directly related to search.**
+
+The architecture should allow future extension to seat selection, boarding-point selection, passenger details, payment, cancellation, etc.
+
+---
+
+# Important Safety / Execution Constraint
+
+Do NOT generate uncontrolled traffic against the public RedBus production website.
+
+The system must support:
+
+* mock endpoints
+* locally hosted services
+* staging environments
+* authorized test environments
+* approved APIs
+* replay of anonymized production traffic
+* synthetic traffic
+
+Production traffic analysis must be **read-only and analytical** unless explicit authorization exists.
+
+Never scrape, attack, bypass rate limits, defeat CAPTCHA, evade authentication, or intentionally degrade a third-party production service.
+
+---
+
+# Objective
+
+Build a performance-testing framework that answers:
+
+> "Can the RedBus search business transaction satisfy defined performance requirements at realistic production traffic volumes and business-transaction distributions?"
+
+The framework must measure:
+
+* Throughput
+* RPS
+* TPS
+* Concurrent users
+* Response time
+* Latency
+* Average response time
+* Median
+* P90
+* P95
+* P99
+* Maximum response time
+* Error rate
+* Timeout rate
+* Requests per transaction
+* Successful transactions per second
+* Failed transactions per second
+* CPU utilization
+* Memory utilization
+* Network utilization where available
+* Database utilization where available
+* Dependency latency where available
+
+---
+
+# Architecture
+
+Design the system using these logical components:
+
+## 1. Traffic Model
+
+Create a configurable production-like traffic model.
+
+Example:
+
+```text
+Search traffic                     60%
+Search + filter                    15%
+Search + sort                      10%
+Search + date change                5%
+Search + bus selection              5%
+Repeat search                       5%
+```
+
+Do NOT treat these percentages as actual RedBus production statistics.
+
+Make them configurable through YAML/JSON/environment configuration.
+
+Example:
+
+```yaml
+traffic_distribution:
+  search: 0.60
+  search_filter: 0.15
+  search_sort: 0.10
+  date_change: 0.05
+  bus_selection: 0.05
+  repeat_search: 0.05
+```
+
+Validate that the distribution totals 1.0.
+
+---
+
+# Search Use Cases
+
+Implement realistic use cases.
+
+## UC01 — Basic Bus Search
+
+User:
+
+```text
+Source
+Destination
+Travel date
+Search
+```
+
+Measure:
+
+* search request latency
+* search transaction response time
+* successful search TPS
+* failed search TPS
+* RPS
+
+---
+
+## UC02 — Search + Filter
+
+User:
+
+```text
+Search
+Apply AC / Non-AC filter
+Apply bus-type filter
+```
+
+Measure complete transaction time.
+
+---
+
+## UC03 — Search + Sort
+
+User:
+
+```text
+Search
+Sort by price
+Sort by departure time
+```
+
+Measure search and sort latency independently.
+
+---
+
+## UC04 — Search + Date Change
+
+User:
+
+```text
+Search
+Change journey date
+Search again
+```
+
+Measure:
+
+* first-search latency
+* second-search latency
+* complete transaction latency
+
+---
+
+## UC05 — Repeat Search
+
+Model users performing multiple searches.
+
+Example:
+
+```text
+Mumbai ? Pune
+Mumbai ? Nashik
+Mumbai ? Goa
+```
+
+Use configurable source/destination datasets.
+
+---
+
+## UC06 — Search ? Bus Selection
+
+Model:
+
+```text
+Search
+Receive results
+Select bus
+```
+
+The objective is to measure the transition from search to selection.
+
+---
+
+# Realistic User Behaviour
+
+Do not implement a simplistic loop such as:
+
+```python
+while True:
+    search()
+```
+
+Implement realistic behaviour.
+
+Users should have:
+
+* think time
+* variable think time
+* different source/destination combinations
+* different travel dates
+* different filters
+* different sorting behaviour
+* repeat searches
+* abandoned searches
+* successful searches
+
+Example:
+
+```text
+Open search
+?
+Think 1–3 seconds
+?
+Enter source
+?
+Think 0.5–2 seconds
+?
+Enter destination
+?
+Think 0.5–2 seconds
+?
+Search
+?
+Think 2–8 seconds
+?
+Filter / Sort / Select
+```
+
+Use configurable probability distributions.
+
+---
+
+# Production Traffic Model
+
+Create a traffic model based on:
+
+```text
+Users
+Sessions
+Transactions
+Requests
+```
+
+Clearly distinguish:
+
+```text
+Concurrent Users
+      ?
+Active Sessions
+      ?
+Business Transactions
+      ?
+HTTP Requests
+```
+
+Explain mathematically how:
+
+```text
+RPS
+TPS
+Concurrent Users
+Think Time
+Transaction Duration
+```
+
+are related.
+
+Use Little's Law where appropriate:
+
+```text
+Concurrency ? Throughput × Response Time
+```
+
+Do not confuse RPS with TPS.
+
+For example:
+
+```text
+1 business transaction
+=
+5 HTTP requests
+```
+
+If TPS = 100:
+
+```text
+Approximate RPS = 100 × 5 = 500 RPS
+```
+
+This must be configurable rather than hard-coded.
+
+---
+
+# Performance Requirements
+
+Create a configurable performance SLA/SLO model.
+
+Example baseline:
+
+```yaml
+performance_requirements:
+
+  search:
+    p95_ms: 1500
+    p99_ms: 2500
+    error_rate_percent: 1.0
+
+  search_filter:
+    p95_ms: 2000
+    p99_ms: 3000
+
+  search_sort:
+    p95_ms: 1800
+    p99_ms: 2800
+
+  search_date_change:
+    p95_ms: 1800
+    p99_ms: 3000
+
+  search_bus_selection:
+    p95_ms: 2000
+    p99_ms: 3000
+```
+
+Clearly mark these values as **example acceptance criteria**.
+
+The architecture must allow client-specific requirements to replace them.
+
+Never claim that these values are official RedBus SLAs unless explicitly supplied by the client.
+
+---
+
+# Load Profiles
+
+Implement the following profiles.
+
+## Baseline
+
+```text
+10% expected peak traffic
+```
+
+## Normal
+
+```text
+50% expected peak traffic
+```
+
+## Peak
+
+```text
+100% expected peak traffic
+```
+
+## Stress
+
+```text
+150% expected peak traffic
+```
+
+## Spike
+
+Suddenly increase traffic:
+
+```text
+20% ? 100%
+```
+
+## Soak
+
+Run at approximately:
+
+```text
+70–80% peak traffic
+```
+
+for an extended duration.
+
+## Capacity
+
+Gradually increase traffic until:
+
+```text
+SLA violation
+OR
+error-rate threshold exceeded
+OR
+system saturation
+```
+
+---
+
+# RPS / TPS Model
+
+Create a configuration such as:
+
+```yaml
+load:
+  peak_rps: 1000
+  peak_tps: 200
+  concurrent_users: 1000
+```
+
+However, do not blindly use all three values simultaneously.
+
+Validate consistency between:
+
+```text
+RPS
+TPS
+Concurrent Users
+Average Transaction Duration
+Requests per Transaction
+```
+
+Build a validator that identifies unrealistic combinations.
+
+Example:
+
+```text
+TPS = 200
+Requests/Transaction = 5
+
+Expected RPS ? 1000
+```
+
+---
+
+# FastAPI Service
+
+Create APIs such as:
+
+```text
+POST /traffic/run
+POST /traffic/stop
+
+GET /traffic/status
+
+POST /scenario/run
+GET /scenario/{scenario_id}
+
+GET /metrics
+GET /results
+GET /results/{run_id}
+
+POST /production-analysis/import
+POST /production-analysis/analyze
+
+GET /reports/{run_id}
+```
+
+Use Pydantic request/response models.
+
+---
+
+# API Example
+
+Implement:
+
+```http
+POST /traffic/run
+```
+
+Request:
+
+```json
+{
+  "scenario": "peak",
+  "duration_seconds": 300,
+  "target_rps": 500,
+  "concurrent_users": 1000
+}
+```
+
+Response:
+
+```json
+{
+  "run_id": "RUN-001",
+  "status": "STARTED"
+}
+```
+
+---
+
+# Metrics Model
+
+For every request capture:
+
+```text
+timestamp
+run_id
+user_id
+session_id
+scenario
+business_transaction
+HTTP method
+endpoint
+status_code
+response_time_ms
+latency_ms
+success
+error_type
+payload_size
+response_size
+```
+
+Where available also capture:
+
+```text
+DNS time
+TCP connect time
+TLS time
+TTFB
+server processing time
+```
+
+Do not expose sensitive production information.
+
+---
+
+# Business Transaction Metrics
+
+For each business transaction calculate:
+
+```text
+TPS
+Average
+Median
+P90
+P95
+P99
+Min
+Max
+Error %
+Timeout %
+Success %
+```
+
+Example:
+
+```text
+BUSINESS TRANSACTION: SEARCH
+
+Requests:
+100000
+
+Successful:
+98500
+
+Failed:
+1500
+
+TPS:
+333.3
+
+Average:
+820 ms
+
+P50:
+640 ms
+
+P90:
+1100 ms
+
+P95:
+1450 ms
+
+P99:
+2300 ms
+
+Error Rate:
+1.5%
+```
+
+---
+
+# Acceptance Criteria
+
+Build automated pass/fail evaluation.
+
+Example:
+
+```text
+PASS if:
+
+P95 <= SLA_P95
+AND
+P99 <= SLA_P99
+AND
+Error Rate <= SLA_Error_Rate
+AND
+Throughput >= Required TPS
+```
+
+Example result:
+
+```json
+{
+  "transaction": "search",
+  "p95_ms": 1420,
+  "p99_ms": 2240,
+  "error_rate": 0.72,
+  "required_p95_ms": 1500,
+  "required_p99_ms": 2500,
+  "required_error_rate": 1.0,
+  "status": "PASS"
+}
+```
+
+---
+
+# Human Judgement Layer
+
+Performance testing must not be reduced to an automated PASS/FAIL number.
+
+Create a **Performance Engineering Assessment** containing:
+
+```text
+Requirement
+Observed result
+Threshold
+Variance
+Business impact
+Technical observation
+Risk
+Human judgement
+Recommendation
+Final decision
+```
+
+Example:
+
+```text
+Requirement:
+Search P95 <= 1500 ms
+
+Observed:
+1420 ms
+
+Result:
+PASS
+
+Architect judgement:
+PASS — acceptable at current workload.
+
+Risk:
+P99 degradation indicates possible tail-latency pressure.
+
+Recommendation:
+Investigate downstream dependency latency before production peak.
+```
+
+The system must explicitly distinguish:
+
+```text
+Automated Result
+```
+
+from:
+
+```text
+Engineering Judgement
+```
+
+---
+
+# Production Traffic Analysis
+
+Create a module that accepts **authorized and anonymized production traffic data**.
+
+Example CSV:
+
+```text
+timestamp,transaction,endpoint,status_code,response_time_ms
+2026-08-13T10:00:01,search,/search,200,620
+2026-08-13T10:00:02,search,/search,200,710
+```
+
+Analyze:
+
+```text
+traffic by hour
+traffic by minute
+peak traffic
+average traffic
+RPS
+TPS
+transaction distribution
+response-time distribution
+error distribution
+HTTP status distribution
+```
+
+Generate:
+
+```text
+peak RPS
+peak TPS
+peak concurrent estimate
+traffic growth rate
+transaction mix
+```
+
+---
+
+# Production Traffic ? Performance Model
+
+Use historical production traffic to derive a synthetic workload.
+
+Example:
+
+```text
+Observed peak:
+800 RPS
+
+Search:
+65%
+
+Filter:
+15%
+
+Sort:
+10%
+
+Date change:
+5%
+
+Selection:
+5%
+```
+
+Generate a test workload:
+
+```text
+Search:
+520 RPS
+
+Filter:
+120 RPS
+
+Sort:
+80 RPS
+
+Date change:
+40 RPS
+
+Selection:
+40 RPS
+```
+
+Again, do not invent production numbers.
+
+Use supplied/anonymized data.
+
+---
+
+# Performance Bottleneck Analysis
+
+Implement rules for identifying likely bottlenecks.
+
+Examples:
+
+```text
+High CPU + increasing latency
+? CPU saturation candidate
+
+Low application CPU + high DB latency
+? database/dependency candidate
+
+High P99 + normal P50
+? tail latency candidate
+
+High RPS + increasing error rate
+? capacity limitation candidate
+
+High connection wait time
+? connection pool candidate
+```
+
+Do not claim root cause with certainty unless telemetry supports it.
+
+Use wording such as:
+
+```text
+"Likely bottleneck"
+"Strong evidence"
+"Requires infrastructure confirmation"
+```
+
+---
+
+# Reporting
+
+Generate a report containing:
+
+## Executive Summary
+
+```text
+Overall status
+Peak workload
+Maximum sustainable TPS
+Maximum sustainable RPS
+P95
+P99
+Error rate
+Capacity limit
+```
+
+## Business Transaction Summary
+
+| Transaction   | TPS | P95 | P99 | Error % | Status |
+| ------------- | --: | --: | --: | ------: | ------ |
+| Search        | ... | ... | ... |     ... | PASS   |
+| Search Filter | ... | ... | ... |     ... | PASS   |
+| Search Sort   | ... | ... | ... |     ... | PASS   |
+| Date Change   | ... | ... | ... |     ... | PASS   |
+| Bus Selection | ... | ... | ... |     ... | PASS   |
+
+## Capacity Analysis
+
+Show:
+
+```text
+Load
+RPS
+TPS
+Concurrency
+P95
+P99
+Error %
+```
+
+---
+
+# Dashboard
+
+Create metrics suitable for Grafana/Prometheus.
+
+Recommended dashboards:
+
+1. Executive Performance Dashboard
+2. Search Transaction Dashboard
+3. RPS/TPS Dashboard
+4. Latency Dashboard
+5. Error Dashboard
+6. Capacity Dashboard
+7. Production Traffic Distribution Dashboard
+
+---
+
+# Data Model
+
+Create tables/models for:
+
+```text
+test_runs
+scenarios
+traffic_profiles
+transactions
+requests
+metrics
+sla_requirements
+production_traffic
+performance_results
+acceptance_results
+engineering_assessments
+```
+
+Use SQLAlchemy.
+
+---
+
+# Code Quality
+
+Follow:
+
+* SOLID principles
+* Clean Architecture
+* dependency injection
+* type hints
+* async programming where appropriate
+* configuration-driven design
+* structured logging
+* exception handling
+* unit testing
+* integration testing
+* performance-test separation
+
+Use:
+
+```text
+app/
+  api/
+  domain/
+  services/
+  models/
+  repositories/
+  performance/
+  traffic/
+  analytics/
+  reporting/
+  config/
+  observability/
+  tests/
+```
+
+---
+
+# Testing
+
+Implement tests for:
+
+## Unit Tests
+
+* traffic distribution
+* percentile calculations
+* SLA validation
+* RPS/TPS calculation
+* concurrency estimation
+* production traffic aggregation
+
+## Integration Tests
+
+* FastAPI endpoints
+* database
+* metrics pipeline
+* report generation
+
+## Performance Tests
+
+Test the test platform itself to ensure it can generate and process metrics without becoming the bottleneck.
+
+---
+
+# Required Deliverables
+
+Generate the complete implementation including:
+
+1. Architecture
+2. Project structure
+3. Python source code
+4. FastAPI application
+5. Pydantic models
+6. SQLAlchemy models
+7. Traffic generator
+8. Business transaction engine
+9. Production traffic analyzer
+10. SLA engine
+11. Metrics engine
+12. Capacity analyzer
+13. Reporting engine
+14. Configuration files
+15. Sample synthetic data
+16. Unit tests
+17. Integration tests
+18. Dockerfile
+19. docker-compose.yml
+20. README
+21. Example API calls
+22. Example performance report
+23. Example Grafana/Prometheus configuration
+24. CI/CD configuration
+
+---
+
+# Implementation Rules
+
+Do not create a toy/demo implementation.
+
+Think like a:
+
+**Senior Principal Performance Architect**
+
+and
+
+**Senior Principal Performance Test Engineer**.
+
+The implementation must be:
+
+```text
+Business-driven
++
+Production-realistic
++
+Requirement-driven
++
+Measurable
++
+Observable
++
+Configurable
++
+Auditable
+```
+
+Do not invent RedBus internal architecture, private APIs, production traffic numbers, or official SLAs.
+
+Where information is unavailable, explicitly mark it:
+
+```text
+UNKNOWN
+CLIENT INPUT REQUIRED
+ASSUMPTION
+EXAMPLE ONLY
+```
+
+Every assumption must be separated from an actual requirement.
+
+---
+
+# Final Engineering Decision
+
+At the end of every test run produce:
+
+```text
+Business Transaction
+?
+Workload
+?
+RPS
+?
+TPS
+?
+Concurrency
+?
+Latency
+?
+P95/P99
+?
+Error Rate
+?
+SLA Comparison
+?
+Capacity Assessment
+?
+Risk Assessment
+?
+Senior Principal Engineering Judgement
+```
+
+The final result must answer:
+
+> "Is the RedBus search business transaction capable of handling the required workload while meeting the client's measurable performance requirements?"
+
+If the supplied client requirements are incomplete, do not invent them. Produce a **Requirements Gap Report** identifying exactly which values must be obtained from the client before declaring production readiness.
+
