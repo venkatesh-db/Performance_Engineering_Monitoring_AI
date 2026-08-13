@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IRCTC Fare & Refund Profiling Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 950px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #0b5ed7; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#0b5ed7; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; margin-right:6px; }
+  button.fixed { background:#1a7f37; }
+  button.danger { background:#c62828; }
+  input { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; width:70px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; white-space: pre-wrap; }
+  .ok { color:#1a7f37; } .warn { color:#b26a00; } .err { color:#c62828; }
+  table { width:100%; border-collapse: collapse; margin-top:12px; font-size: 12px; }
+  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid #eee; }
+  .hint { color:#888; font-size:12px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>IRCTC Fare &amp; Refund Profiling Lab</h1>
+<p class="subtitle">Day 2 / Module 2 — cProfile/pstats, tracemalloc, blocking I/O in async paths, before/after comparison.</p>
+
+<div class="card">
+  <h2>1. Prove the event-loop-blocking bug</h2>
+  <p class="hint">Fires a slow fare estimate (buggy path: blocking <code>time.sleep()</code> on the event loop) and a trivial health check AT THE SAME TIME. If the blocking bug is real, the health check waits behind the fare call — proving it's not just "that endpoint is slow," the whole process stalls.</p>
+  <button onclick="proveBlocking(false)">Fire both (buggy)</button>
+  <button class="fixed" onclick="proveBlocking(true)">Fire both (fixed)</button>
+  <div class="log" id="blockLog"></div>
+</div>
+
+<div class="card">
+  <h2>2. cProfile a load window</h2>
+  <p class="hint">Starts cProfile, fires 20 fare-estimate calls, stops, and shows the real top-cumulative-time functions — this is what you'd see running <code>python -m cProfile</code> or the pstats output in the lab.</p>
+  <button onclick="profileRun(false)">Profile 20 calls (buggy)</button>
+  <button class="fixed" onclick="profileRun(true)">Profile 20 calls (fixed)</button>
+  <div class="log" id="profileLog"></div>
+  <table id="profileTable"><thead><tr><th>Function</th><th>ncalls</th><th>cumtime (s)</th><th>per-call (ms)</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>3. tracemalloc a memory-growth window</h2>
+  <p class="hint">Starts tracemalloc, hits <code>/api/refund/history</code> 15 times, then snapshots — shows the exact file:line responsible for new allocations.</p>
+  <button onclick="tracemallocRun(false)">Grow history 15x (buggy)</button>
+  <button class="fixed" onclick="tracemallocRun(true)">Grow history 15x (fixed, capped)</button>
+  <div class="log" id="tracemallocLog"></div>
+  <table id="tracemallocTable"><thead><tr><th>File:line</th><th>Size diff (KB)</th><th>Count diff</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>Reset lab state</h2>
+  <button class="danger" onclick="resetLab()">Reset (clear history, fare cache)</button>
+  <div class="log" id="resetLog"></div>
+</div>
+
+<script>
+async function proveBlocking(fixed) {
+  const log = document.getElementById('blockLog');
+  log.textContent = 'firing fare estimate + health check simultaneously...';
+  const t0 = performance.now();
+  const farePromise = fetch('/api/fare/estimate', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({train_no: '12345', distance_km: 300, passengers: 2, fixed})
+  }).then(r => r.json()).then(d => ({...d, done_at: performance.now() - t0}));
+  const healthPromise = fetch('/api/health').then(r => r.json()).then(d => ({...d, done_at: performance.now() - t0}));
+  const [fare, health] = await Promise.all([farePromise, healthPromise]);
+  log.innerHTML =
+    `Fare estimate (${fare.mode}) finished at t+${fare.done_at.toFixed(0)}ms (elapsed_ms=${fare.elapsed_ms})\n` +
+    `Health check finished at t+${health.done_at.toFixed(0)}ms\n` +
+    (health.done_at > fare.done_at * 0.8
+      ? `<span class="err">Health check was blocked behind the fare call — event loop was stalled.</span>`
+      : `<span class="ok">Health check returned promptly — event loop was NOT blocked.</span>`);
+}
+
+async function profileRun(fixed) {
+  const log = document.getElementById('profileLog');
+  const tbody = document.querySelector('#profileTable tbody');
+  log.textContent = 'starting cProfile, firing 20 fare-estimate calls...';
+  tbody.innerHTML = '';
+  await fetch('/api/debug/profile/start', {method: 'POST'});
+  const t0 = performance.now();
+  await Promise.all(Array.from({length: 20}, (_, i) =>
+    fetch('/api/fare/estimate', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({train_no: '12345', distance_km: 300, passengers: 2, fixed})
+    })
+  ));
+  const totalMs = (performance.now() - t0).toFixed(0);
+  const res = await fetch('/api/debug/profile/stop', {method: 'POST'});
+  const data = await res.json();
+  log.textContent = `20 calls (${fixed ? 'fixed' : 'buggy'}) finished in ${totalMs}ms total.`;
+  tbody.innerHTML = (data.top_functions || []).map(f =>
+    `<tr><td>${f.function}</td><td>${f.ncalls}</td><td>${f.cumtime}</td><td>${f.percall_ms}</td></tr>`
+  ).join('');
+}
+
+async function tracemallocRun(fixed) {
+  const log = document.getElementById('tracemallocLog');
+  const tbody = document.querySelector('#tracemallocTable tbody');
+  log.textContent = 'starting tracemalloc, growing refund history 15x...';
+  tbody.innerHTML = '';
+  await fetch('/api/debug/tracemalloc/start', {method: 'POST'});
+  for (let i = 0; i < 15; i++) {
+    await fetch(`/api/refund/history?fixed=${fixed}`);
+  }
+  const res = await fetch('/api/debug/tracemalloc/snapshot');
+  const data = await res.json();
+  log.textContent = `done (${fixed ? 'fixed/capped' : 'buggy/unbounded'})`;
+  tbody.innerHTML = (data.top_allocations || []).map(a =>
+    `<tr><td>${a.file_line}</td><td>${a.size_diff_kb}</td><td>${a.count_diff}</td></tr>`
+  ).join('');
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', { method: 'POST' });
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+</script>
+</body>
+</html>
