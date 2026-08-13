@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IRCTC Payment Tracing Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 950px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #0b5ed7; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#0b5ed7; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; margin-right:6px; margin-bottom:6px; }
+  button.alt { background:#1a7f37; }
+  button.danger { background:#c62828; }
+  input, select { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; white-space: pre-wrap; }
+  .ok { color:#1a7f37; } .warn { color:#b26a00; } .err { color:#c62828; }
+  a.jaeger-link { color: #0b5ed7; font-weight:600; }
+  .hint { color:#888; font-size:12px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>IRCTC Payment Tracing Lab</h1>
+<p class="subtitle">Day 2 / Module 4 — real OpenTelemetry + Jaeger. Every button below produces a real trace you can open directly.</p>
+
+<div class="card">
+  <h2>1. Make a payment (produces a real multi-span trace)</h2>
+  <input id="trainNo" value="12000" placeholder="train no">
+  <input id="amount" value="500" placeholder="amount" style="width:70px">
+  <label class="hint"><input type="checkbox" id="slowDb"> simulate slow DB span (critical path demo)</label><br>
+  <button onclick="pay()">Pay</button>
+  <div class="log" id="payLog"></div>
+</div>
+
+<div class="card">
+  <h2>2. Context propagation across Kafka</h2>
+  <p class="hint">Start <code>python consumer.py</code> in a terminal first. Then make a payment above — the consumer's "notify-customer" span should appear in Jaeger under the SAME trace_id, even though it runs in a separate process, seconds later.</p>
+  <div class="log" id="kafkaHint">Run: <code>python consumer.py</code></div>
+</div>
+
+<div class="card">
+  <h2>3. Sampling strategy</h2>
+  <p class="hint">A real OpenTelemetry sampler whose rate you can change live. Set it low, fire a batch, then check how many actually landed in Jaeger vs. how many you sent.</p>
+  <input id="sampleRate" value="1.0" style="width:60px"> <button onclick="setSampleRate()">Set sample rate</button>
+  <br>
+  <input id="batchCount" value="20" style="width:60px"> <button onclick="fireBatch()">Fire batch of payments</button>
+  <div class="log" id="samplingLog"></div>
+</div>
+
+<div class="card">
+  <h2>4. Open Jaeger directly</h2>
+  <a class="jaeger-link" href="http://localhost:16686" target="_blank">Open Jaeger UI (localhost:16686)</a>
+  <p class="hint">Search for service "irctc-payment-api", or paste a trace_id from above into the search box.</p>
+</div>
+
+<div class="card">
+  <h2>Reset lab state</h2>
+  <button class="danger" onclick="resetLab()">Reset (clear payments, flush Redis)</button>
+  <div class="log" id="resetLog"></div>
+</div>
+
+<script>
+async function pay() {
+  const train_no = document.getElementById('trainNo').value;
+  const amount = parseInt(document.getElementById('amount').value, 10);
+  const slow_db = document.getElementById('slowDb').checked;
+  const log = document.getElementById('payLog');
+  log.textContent = 'sending payment...';
+  const t0 = performance.now();
+  const res = await fetch('/api/payment', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({train_no, amount, slow_db})
+  });
+  const ms = (performance.now() - t0).toFixed(0);
+  if (res.ok) {
+    const d = await res.json();
+    log.innerHTML = `<span class="ok">${d.status}</span> payment_id=${d.payment_id} in ${ms}ms\n` +
+      `trace_id: <code>${d.trace_id}</code>\n` +
+      `<a class="jaeger-link" href="http://localhost:16686/trace/${d.trace_id}" target="_blank">Open this trace in Jaeger →</a>`;
+  } else {
+    const err = await res.json();
+    log.innerHTML = `<span class="err">${res.status}: ${err.detail}</span> (${ms}ms)`;
+  }
+}
+
+async function setSampleRate() {
+  const rate = parseFloat(document.getElementById('sampleRate').value);
+  const res = await fetch(`/api/tracing/sample-rate?rate=${rate}`, {method: 'POST'});
+  const d = await res.json();
+  document.getElementById('samplingLog').textContent = `sample_rate set to ${d.sample_rate}`;
+}
+
+async function fireBatch() {
+  const n = parseInt(document.getElementById('batchCount').value, 10) || 20;
+  const log = document.getElementById('samplingLog');
+  log.textContent = `firing ${n} payments...`;
+  const traceIds = [];
+  for (let i = 0; i < n; i++) {
+    const res = await fetch('/api/payment', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({train_no: '12000', amount: 100 + i})
+    });
+    if (res.ok) traceIds.push((await res.json()).trace_id);
+  }
+  log.innerHTML = `Sent ${n} requests, got ${traceIds.length} trace_ids back.\n` +
+    `<span class="hint">Check Jaeger's trace count for service "irctc-payment-api" over the last minute — with sample_rate < 1.0, it should be LESS than ${n}, since dropped spans are never exported.</span>`;
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+</script>
+</body>
+</html>

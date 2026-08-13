@@ -1,0 +1,19 @@
+
+
+
+1. Launch Docker (if not already running):
+
+2. Start the containers this lab needs:
+
+docker start irctc-jaeger
+docker start kafka-kafka-1
+docker start irctc-redis-eviction
+
+3.  Postgres  - should already be running as a background service (pg_isready to check).
+
+4. Start the app:
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/irctc-tracing-lab4" && source venv/bin/activate && uvicorn main:app --port 8007
+
+5. Open http://127.0.0.1:8007 
+  Jaeger's UI at http://localhost:16686
+

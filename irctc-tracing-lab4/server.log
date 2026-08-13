@@ -1,0 +1,14 @@
+INFO:     Started server process [27906]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8007 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52023 - "POST /api/payment HTTP/1.1" 200 OK
+Transient error HTTPConnectionPool(host='localhost', port=4318): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=4318): Failed to establish a new connection: [Errno 61] Connection refused")) encountered while exporting span batch, retrying in 1.00s.
+Transient error HTTPConnectionPool(host='localhost', port=4318): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=4318): Failed to establish a new connection: [Errno 61] Connection refused")) encountered while exporting span batch, retrying in 2.16s.
+Transient error HTTPConnectionPool(host='localhost', port=4318): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=4318): Failed to establish a new connection: [Errno 61] Connection refused")) encountered while exporting span batch, retrying in 3.77s.
+Failed to export span batch due to timeout, max retries or shutdown.
+INFO:     127.0.0.1:52061 - "POST /api/payment HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27906]
