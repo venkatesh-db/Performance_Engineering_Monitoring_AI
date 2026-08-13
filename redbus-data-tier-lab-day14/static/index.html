@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>redBus Data-Tier Lab</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 32px auto; background:#f5f6f8; color:#1a1a1a; }
+  h1 { color: #d84e55; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { color:#666; margin-top:0; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  button { background:#d84e55; color:white; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; }
+  input { padding:6px 8px; margin-right:6px; border:1px solid #ccc; border-radius:4px; }
+  .log { font-family: monospace; font-size: 13px; margin-top:8px; }
+  .ok { color:#1a7f37; } .warn { color:#b26a00; } .err { color:#c62828; }
+  table { width:100%; border-collapse: collapse; margin-top:12px; font-size: 13px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+  .pill.ok { background:#e6f4ea; color:#1a7f37; }
+  .pill.bad { background:#fdecea; color:#c62828; }
+  .hint { color:#888; font-size:12px; }
+  code { background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>redBus Data-Tier Lab</h1>
+<p class="subtitle">Module 4 — PostgreSQL connection pool + missing index, Redis cache-aside, Kafka booking events.</p>
+
+<div class="card">
+  <h2>1. Live infra health (Postgres pool / Redis / Kafka)</h2>
+  <button onclick="refreshHealth()">Refresh</button>
+  <span class="hint">poll this while running load below to watch the pool fill up</span>
+  <table id="healthTable"><tbody></tbody></table>
+</div>
+
+<div class="card">
+  <h2>2. Search buses (cache-aside on Redis, falls through to Postgres)</h2>
+  <input id="source" value="Bangalore" placeholder="from">
+  <input id="destination" value="Chennai" placeholder="to">
+  <input id="travelDate" value="2026-08-15" placeholder="date">
+  <button onclick="search()">Search</button>
+  <button onclick="searchTwice()">Search twice (compare cached vs uncached)</button>
+  <div class="log" id="searchLog"></div>
+</div>
+
+<div class="card">
+  <h2>3. Create a booking (writes to Postgres, publishes to Kafka)</h2>
+  <input id="busId" value="1" placeholder="bus id">
+  <input id="customerId" value="CUST001" placeholder="customer id">
+  <input id="seatNo" value="S1" placeholder="seat no">
+  <button onclick="book()">Book</button>
+  <div class="log" id="bookLog"></div>
+</div>
+
+<div class="card">
+  <h2>4. Pool-exhaustion demo</h2>
+  <p class="hint">Fires N concurrent searches at once against a pool capped at 3 connections (see <code>POOL_MAX_SIZE</code> in main.py). Watch request timings spread out as later requests queue for a free connection.</p>
+  <input id="concurrency" value="10" style="width:60px">
+  <button onclick="fireConcurrent()">Fire concurrent searches</button>
+  <div class="log" id="concurrentLog"></div>
+</div>
+
+<div class="card">
+  <h2>5. Kafka message feed (real broker, real consumer)</h2>
+  <p class="hint">A background consumer in <code>main.py</code> reads the "booking.created" topic live. Every booking you create above should appear here within ~1s, with real end-to-end lag (producer timestamp to consumer read).</p>
+  <button onclick="refreshFeed()">Refresh feed</button>
+  <span class="hint" id="feedAutoHint">auto-refreshing every 2s</span>
+  <table id="feedTable">
+    <thead><tr><th>Offset</th><th>Booking ID</th><th>Customer</th><th>Seat</th><th>Lag</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function refreshHealth() {
+  const res = await fetch('/api/health');
+  const h = await res.json();
+  const tbody = document.querySelector('#healthTable tbody');
+  const p = h.postgres_pool;
+  tbody.innerHTML = `
+    <tr><th>Postgres pool</th><td>${p.in_use}/${p.max_size} in use (idle=${p.idle})</td></tr>
+    <tr><th>Redis</th><td>${h.redis_ok ? '<span class="pill ok">OK</span>' : '<span class="pill bad">DOWN</span>'}</td></tr>
+    <tr><th>Kafka</th><td>${h.kafka_available ? '<span class="pill ok">connected</span>' : '<span class="pill bad">unavailable</span>'} ${h.kafka_error ? '<span class="hint">' + h.kafka_error + '</span>' : ''}</td></tr>
+  `;
+}
+
+async function search() {
+  const source = document.getElementById('source').value;
+  const destination = document.getElementById('destination').value;
+  const travel_date = document.getElementById('travelDate').value;
+  const t0 = performance.now();
+  const res = await fetch(`/api/buses/search?source=${source}&destination=${destination}&travel_date=${travel_date}`);
+  const data = await res.json();
+  const ms = (performance.now() - t0).toFixed(0);
+  document.getElementById('searchLog').innerHTML =
+    `<span class="${data.cached ? 'ok' : 'warn'}">${data.cached ? 'CACHE HIT' : 'CACHE MISS (queried Postgres)'}</span> — ${data.count} buses, server latency_ms=${data.latency_ms}, round-trip=${ms}ms`;
+}
+
+async function searchTwice() {
+  const source = document.getElementById('source').value;
+  const destination = document.getElementById('destination').value;
+  const travel_date = document.getElementById('travelDate').value;
+  const qs = `source=${source}&destination=${destination}&travel_date=${travel_date}`;
+
+  // Force a real cache miss so "first call" isn't already warmed by a
+  // previous demo run within the 30s TTL.
+  await fetch(`/api/cache/search?${qs}`, { method: 'DELETE' });
+
+  const t0 = performance.now();
+  const res1 = await fetch(`/api/buses/search?${qs}`);
+  const first = await res1.json();
+  const t1 = performance.now();
+  const res2 = await fetch(`/api/buses/search?${qs}`);
+  const second = await res2.json();
+  const t2 = performance.now();
+  document.getElementById('searchLog').innerHTML =
+    `First call (${first.cached ? 'cached' : 'uncached'}): ${(t1-t0).toFixed(0)}ms server=${first.latency_ms}ms<br>` +
+    `Second call (${second.cached ? 'cached' : 'uncached'}): ${(t2-t1).toFixed(0)}ms server=${second.latency_ms}ms`;
+}
+
+async function book() {
+  const bus_id = parseInt(document.getElementById('busId').value, 10);
+  const customer_id = document.getElementById('customerId').value;
+  const seat_no = document.getElementById('seatNo').value;
+  const res = await fetch('/api/bookings', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bus_id, customer_id, seat_no})
+  });
+  const log = document.getElementById('bookLog');
+  if (res.ok) {
+    const data = await res.json();
+    const kafkaCls = data.kafka_published ? 'ok' : 'warn';
+    log.innerHTML = `<span class="ok">Booking #${data.booking_id} created</span> — ` +
+      `<span class="${kafkaCls}">Kafka: ${data.kafka_published ? 'published' : 'NOT published (' + (data.kafka_error || 'unknown') + ')'}</span>`;
+  } else {
+    const err = await res.json();
+    log.innerHTML = `<span class="err">${res.status}: ${err.detail}</span>`;
+  }
+  refreshHealth();
+}
+
+async function fireConcurrent() {
+  const n = parseInt(document.getElementById('concurrency').value, 10) || 10;
+  const log = document.getElementById('concurrentLog');
+  log.textContent = `firing ${n} concurrent searches...`;
+  const t0 = performance.now();
+  const promises = Array.from({length: n}, (_, i) =>
+    fetch(`/api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=${i}`)
+      .then(r => r.json())
+      .then(d => ({ latency_ms: d.latency_ms }))
+  );
+  const results = await Promise.all(promises);
+  const totalMs = (performance.now() - t0).toFixed(0);
+  const latencies = results.map(r => r.latency_ms).sort((a, b) => a - b);
+  log.innerHTML = `${n} requests finished in ${totalMs}ms total.<br>` +
+    `Per-request server latency: min=${latencies[0]}ms max=${latencies[latencies.length-1]}ms<br>` +
+    `<span class="hint">With only 3 pool connections, later requests should show visibly higher latency as they queue.</span>`;
+  refreshHealth();
+}
+
+async function refreshFeed() {
+  const res = await fetch('/api/kafka/feed');
+  const events = await res.json();
+  const tbody = document.querySelector('#feedTable tbody');
+  if (!events.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="hint">no messages consumed yet — create a booking above</td></tr>';
+    return;
+  }
+  tbody.innerHTML = events.map(e => {
+    const lagCls = e.lag_ms > 500 ? 'warn' : 'ok';
+    return `<tr>
+      <td>${e.offset}</td><td>${e.booking_id}</td><td>${e.customer_id}</td><td>${e.seat_no}</td>
+      <td class="${lagCls}">${e.lag_ms}ms</td>
+    </tr>`;
+  }).join('');
+}
+
+refreshHealth();
+refreshFeed();
+setInterval(refreshFeed, 2000);
+</script>
+</body>
+</html>

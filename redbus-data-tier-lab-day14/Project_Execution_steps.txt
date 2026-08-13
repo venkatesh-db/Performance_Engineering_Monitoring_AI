@@ -1,0 +1,11 @@
+
+launch docker 
+
+docker start kafka-kafka-1
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14" && rm -rf venv && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14" && source venv/bin/activate && uvicorn main:app --port 8003
+
+Open http://127.0.0.1:8003
+

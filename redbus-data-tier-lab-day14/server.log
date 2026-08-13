@@ -1,0 +1,322 @@
+INFO:     Started server process [58588]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8003 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50532 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50536 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50535 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50542 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50542 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "DELETE /api/cache/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "POST /api/bookings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50548 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50550 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50547 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50549 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50546 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50550 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50548 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50547 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "POST /api/bookings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50588 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50543 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50639 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50642 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50645 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "POST /api/bookings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "POST /api/bookings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "POST /api/bookings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50647 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50647 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50646 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50648 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50650 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/buses/search?source=Bangalore&destination=Chennai&travel_date=2026-08-15&_=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50654 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50658 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50659 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50661 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50662 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50665 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50666 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50668 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50669 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50673 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50674 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+Exception in thread lab-ui-feed-heartbeat:
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14/venv/lib/python3.14/site-packages/kafka/coordinator/base.py", line 1013, in run
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14/venv/lib/python3.14/site-packages/kafka/coordinator/base.py", line 1034, in _run_once
+    self.coordinator._client.poll(timeout_ms=0)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14/venv/lib/python3.14/site-packages/kafka/client_async.py", line 601, in poll
+    self._poll(timeout / 1000)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/redbus-data-tier-lab-day14/venv/lib/python3.14/site-packages/kafka/client_async.py", line 640, in _poll
+    self._selector.unregister(key.fileobj)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 518, in unregister
+    key = super().unregister(fileobj)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 253, in unregister
+    key = self._fd_to_key.pop(self._fileobj_lookup(fileobj))
+                              ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 229, in _fileobj_lookup
+    return _fileobj_to_fd(fileobj)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 42, in _fileobj_to_fd
+    raise ValueError("Invalid file descriptor: {}".format(fd))
+ValueError: Invalid file descriptor: -1
+INFO:     127.0.0.1:50754 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50754 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50754 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50767 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50940 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51111 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51277 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51451 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51627 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51798 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51966 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52138 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52311 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52482 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52649 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52823 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53206 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53446 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53619 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53790 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53995 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54100 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54255 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54459 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54496 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54532 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54765 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54968 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55003 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55039 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55072 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55088 - "GET /api/kafka/feed HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [58588]
