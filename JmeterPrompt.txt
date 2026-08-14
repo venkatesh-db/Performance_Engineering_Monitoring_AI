@@ -1,0 +1,113 @@
+
+
+## Final reusable prompt for JMeter performance testing
+
+> You are a senior performance tester responsible for validating a FastAPI-based redBus-style demo application. The objective is to execute an end-to-end performance test focusing on two APIs:
+>
+> 1. `GET /api/search`
+> 2. `GET /api/seats/{bus_id}`
+>
+> Your role is to simulate real user behavior in a booking flow and validate the application under concurrent load.
+>
+> Test objective:
+> - Simulate 100 concurrent users performing search actions against the application.
+> - Validate the search API under load.
+> - Extract a valid bus ID from the search response.
+> - Trigger the seat request for that bus to simulate a real user journey.
+> - Assert that both requests return the expected HTTP response status.
+>
+> JMeter test flow:
+> - Thread Group
+>   - Number of Threads: 100
+>   - Ramp-Up Period: 10 seconds
+>   - Loop Count: 1 or more depending on the test run
+>
+> - HTTP Request: Search
+>   - Method: GET
+>   - Path: `/api/search`
+>   - Parameters:
+>     - `source`
+>     - `destination`
+>     - `travel_date`
+>   - Example values:
+>     - Bangalore, Chennai, 2026-08-15
+>     - Bangalore, Hyderabad, 2026-08-15
+>     - Pune, Mumbai, 2026-08-15
+>
+> - Response Assertion on Search
+>   - Add an HTTP response code assertion
+>   - Expected response code: `200`
+>   - Validate that search requests succeed successfully under load
+>
+> - JSON Extractor on Search Response
+>   - Extract a bus ID from the search response, for example:
+>     - `$.buses[0].id`
+>     - or a random bus from the returned list
+>   - Store it in a variable like `bus_id`
+>
+> - HTTP Request: Seat Detail
+>   - Method: GET
+>   - Path: `/api/seats/${bus_id}`
+>   - This simulates the user selecting a bus and viewing seat availability
+>
+> - Response Assertion on Seat Request
+>   - Add an HTTP response code assertion
+>   - Expected response code: `200`
+>   - Validate that seat requests succeed for valid bus IDs
+>
+> Performance checks required:
+> - Throughput in requests per second
+> - Response time metrics: P50, P95, P99
+> - Error rate and failed requests
+> - Stability under 100 concurrent users
+> - CPU and memory impact during the run
+> - Bottleneck identification under concurrent load
+> - Comparison of baseline vs peak load behavior
+>
+> Workload behavior:
+> - Start with a smaller user count and ramp up gradually to 100 users
+> - Maintain a stable load for a defined duration
+> - Use realistic parameter combinations and random bus selection
+> - Capture both search-heavy traffic and mixed traffic (search + seat detail requests)
+>
+> Assertions required:
+> - For every `GET /api/search` request, assert HTTP status `200`
+> - For every `GET /api/seats/${bus_id}` request, assert HTTP status `200`
+> - Any unexpected response code should be treated as a test failure
+>
+> Deliverables:
+> 1. Test plan and workload design
+> 2. Step-by-step execution flow
+> 3. JMeter scenario with thread group and HTTP requests
+> 4. Metrics summary table
+> 5. Error analysis and bottleneck findings
+> 6. Root-cause analysis
+> 7. Optimization recommendations
+> 8. Final performance conclusion with pass/fail outcome
+>
+> Success criteria:
+> - Search requests remain successful under 100 concurrent users
+> - Seat requests remain successful with valid HTTP status codes
+> - Error rate remains minimal
+> - Response latency remains stable and within acceptable limits
+> - System shows no severe degradation during the test
+>
+> Output format:
+> Provide the final result in a structured performance report with sections:
+> - Objective
+> - Test Setup
+> - Scenarios
+> - Assertions
+> - Metrics
+> - Findings
+> - Root Cause
+> - Recommendations
+> - Conclusion
+
+---
+
+## Short version
+
+> You are a performance tester validating `GET /api/search` and `GET /api/seats/{bus_id}` under 100 concurrent users. In JMeter, create a Thread Group with 100 threads, 10s ramp-up, and run the flow: Search API → JSON Extract bus ID → Seat Detail API. Add HTTP response code assertions for both requests and expect `200` for success. Measure throughput, latency, errors, and stability. Capture the final report with findings, root cause, and optimization recommendations.
+
+If you want, I can next generate the actual JMeter `.jmx` structure or a ready-to-paste XML snippet for this exact flow.
