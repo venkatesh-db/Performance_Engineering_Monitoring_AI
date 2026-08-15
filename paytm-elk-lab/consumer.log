@@ -1,0 +1,49 @@
+{"ts": 1786708418.9083679, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "d29edd0f49f6ed72d14baedfbbe1dc38", "correlation_id": "cac4e08d-2187-4b25-a5d6-964be88ab390", "duration_ms": 339.3, "upi_ref": "UPI5D6001E776C6"}
+{"ts": 1786708463.8607638, "level": "ERROR", "message": "settlement FAILED: INVALID_UPI_PIN", "logger": "paytm-settlement-consumer", "trace_id": "83967c24c59c905d8ffe1cd6aa5b59b6", "correlation_id": "a87d82fb-10ee-4abd-9852-209acee84866", "duration_ms": 114.7, "upi_ref": "UPI7FD5FB5BE167"}
+{"ts": 1786708465.480076, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "a7356e5097f1bc0f94e57dd53dec55fa", "correlation_id": "ad8b955c-e429-4578-9a75-1808dff174f4", "duration_ms": 328.7, "upi_ref": "UPIBBDD771C09E1"}
+{"ts": 1786708466.694823, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "681406383bd6b17821bd1f449c478979", "correlation_id": "74c05cf0-2a7c-44ca-89fc-b7aaa7a9b4bd", "duration_ms": 382.9, "upi_ref": "UPI5C5561FC0585"}
+{"ts": 1786708483.734391, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "1a44d99fe96fd95b6018d4bb5ff93039", "correlation_id": "d966b489-4dbd-45d6-a664-5d4524218712", "duration_ms": 310.7, "upi_ref": "UPI3A1D68D51A72"}
+{"ts": 1786708505.527872, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "c601c0cc7c320621749778907572eb4d", "correlation_id": "dd9fae8d-3f42-4532-b141-942c1922ed15", "duration_ms": 341.5, "upi_ref": "UPIAAAEC3239F81"}
+{"ts": 1786708506.360731, "level": "INFO", "message": "settlement completed", "logger": "paytm-settlement-consumer", "trace_id": "5db541cc4c40dddd864b144f69f62914", "correlation_id": "a5b80a86-972a-4157-ac33-40762c41b353", "duration_ms": 110.9, "upi_ref": "UPIAAF2E77847A6"}
+consuming paytm.payment.events...
+Traceback (most recent call last):
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/consumer.py", line 86, in <module>
+    main()
+    ~~~~^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/consumer.py", line 75, in main
+    for msg in consumer:
+               ^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/consumer/group.py", line 1203, in __next__
+    return self.next_v2()
+           ~~~~~~~~~~~~^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/consumer/group.py", line 1211, in next_v2
+    return next(self._iterator)
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/consumer/group.py", line 1126, in _message_generator_v2
+    record_map = self.poll(timeout_ms=timeout_ms, update_offsets=False)
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/consumer/group.py", line 663, in poll
+    records = self._poll_once(remaining, max_records, update_offsets=update_offsets)
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/consumer/group.py", line 685, in _poll_once
+    self._coordinator.poll()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/coordinator/consumer.py", line 274, in poll
+    self.ensure_coordinator_ready()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/coordinator/base.py", line 274, in ensure_coordinator_ready
+    self._client.poll(future=metadata_update)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/client_async.py", line 601, in poll
+    self._poll(timeout / 1000)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/venkatesh/Performance Engineering & Monitoring tools/Day3/paytm-elk-lab/venv/lib/python3.14/site-packages/kafka/client_async.py", line 640, in _poll
+    self._selector.unregister(key.fileobj)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 518, in unregister
+    key = super().unregister(fileobj)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 253, in unregister
+    key = self._fd_to_key.pop(self._fileobj_lookup(fileobj))
+                              ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 229, in _fileobj_lookup
+    return _fileobj_to_fd(fileobj)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/selectors.py", line 42, in _fileobj_to_fd
+    raise ValueError("Invalid file descriptor: {}".format(fd))
+ValueError: Invalid file descriptor: -1

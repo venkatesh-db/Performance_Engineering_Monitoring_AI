@@ -1,0 +1,35 @@
+{
+  "title": "Paytm - Loki investigation view (compare against Kibana)",
+  "uid": "paytm-loki-view",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "title": "P95 / P99 payment latency", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, endpoint))", "legendFormat": "P95 {{endpoint}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, endpoint))", "legendFormat": "P99 {{endpoint}}", "refId": "B" }
+      ]
+    },
+    {
+      "id": 2, "title": "All logs (Loki)", "type": "logs",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "wrapLogMessage": true },
+      "targets": [{ "expr": "{job=\"paytm\"}", "refId": "A" }]
+    },
+    {
+      "id": 3, "title": "Failed settlements (Loki)", "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "wrapLogMessage": true },
+      "targets": [{ "expr": "{job=\"paytm\", level=\"ERROR\"}", "refId": "A" }]
+    }
+  ]
+}

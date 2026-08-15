@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PayWallet — Pay Anyone, Anywhere</title>
+<style>
+  :root { --brand:#00a1e0; --brand-dark:#0077a8; --ink:#1c1c1e; --bg:#f4f7fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin:0; background: var(--bg); color: var(--ink); }
+  header { background: var(--brand); color: white; padding: 14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-size: 22px; font-weight: 800; }
+  .logo span { color: #d6f2ff; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .merchant-card { background:white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .merchant-name { font-weight:700; font-size:14px; margin-bottom:4px; }
+  .merchant-cat { display:inline-block; background:#e6f7ff; color: var(--brand-dark); font-size:10px; padding:2px 8px; border-radius:10px; margin-bottom:10px; }
+  .amount-row { display:flex; gap:6px; margin-bottom:8px; }
+  .amount-row input { width:90px; padding:7px; border:1px solid #ddd; border-radius:6px; }
+  .pay-btn { width:100%; background: var(--brand); color:white; border:none; padding:9px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; }
+  .pay-log { font-size:11px; color:#888; margin-top:6px; min-height:14px; word-break:break-all; }
+
+  .perf-panel { margin-top: 40px; border-top: 3px dashed #ccc; padding-top: 24px; }
+  .perf-panel h2 { font-size:15px; color:#555; }
+  .perf-card { background: #16181f; color: #d8dee9; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; font-family: monospace; font-size: 12.5px; }
+  .perf-card h3 { color: #5ec4e0; margin:0 0 10px; font-family: -apple-system, Arial, sans-serif; font-size:14px; }
+  .perf-card a { color: #a3be8c; }
+  .perf-card .hint { color: #7a8290; font-size: 11.5px; }
+  .perf-btn { background:#2d3340; color:#eceff4; border:none; padding:7px 12px; border-radius:5px; cursor:pointer; margin-right:6px; margin-bottom:6px; font-family: -apple-system, Arial, sans-serif; font-size:12.5px; }
+  .perf-btn.alt { background:#5e8148; }
+  .log-line { margin-top:8px; white-space: pre-wrap; word-break: break-all; }
+  input.perf-input { padding:6px 8px; margin-right:6px; border:1px solid #444; border-radius:5px; background:#0d0f14; color:#d8dee9; font-family: monospace; }
+  .compare-table { width:100%; border-collapse: collapse; margin-top:10px; }
+  .compare-table th, .compare-table td { text-align:left; padding:6px 10px; border-bottom:1px solid #2a2e3a; font-size:12px; }
+  .compare-table th { color:#5ec4e0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Pay<span>Wallet</span></div>
+</header>
+
+<main>
+  <div class="grid" id="merchantGrid">Loading merchants…</div>
+</main>
+
+<main>
+<div class="perf-panel">
+  <h2>🔧 Performance tester view — Day 3 / Module 4 (ELK Stack &amp; Cross-Signal Incident Analysis)</h2>
+
+  <div class="perf-card">
+    <h3>Real observability stack (Loki AND Elasticsearch, side by side)</h3>
+    <p>Kibana (ELK): <a href="http://localhost:5601" target="_blank">http://localhost:5601</a></p>
+    <p>Grafana (Loki + metrics + traces): <a href="http://localhost:3003/d/paytm-loki-view" target="_blank">http://localhost:3003/d/paytm-loki-view</a> (admin/admin)</p>
+    <p>Elasticsearch direct: <a href="http://localhost:9200" target="_blank">http://localhost:9200</a> &nbsp; Loki direct: <a href="http://localhost:3101" target="_blank">http://localhost:3101</a> &nbsp; Jaeger: <a href="http://localhost:16686" target="_blank">http://localhost:16686</a></p>
+    <p class="hint">Bring the stack up first: <code>docker compose up -d</code> (also needs the shared Jaeger + Kafka: <code>docker start irctc-jaeger kafka-kafka-1</code>). First time in Kibana, create a data view for <code>paytm-logs-*</code> under Stack Management &gt; Data Views.</p>
+  </div>
+
+  <div class="perf-card">
+    <h3>Make a payment, then investigate it in BOTH tools</h3>
+    <input id="merchId" class="perf-input" value="1" placeholder="merchant id" style="width:70px">
+    <input id="amount" class="perf-input" value="500" placeholder="amount" style="width:70px">
+    <button class="perf-btn" onclick="makePayment()">Pay</button>
+    <div class="log-line" id="payLog"></div>
+    <p class="hint">Run the settlement consumer in a terminal to see real success/failure outcomes: <code>python consumer.py</code></p>
+  </div>
+
+  <div class="perf-card">
+    <h3>Investigation workflow comparison — same failed transaction, two tools</h3>
+    <table class="compare-table">
+      <tr><th>Step</th><th>Loki / Grafana (LogQL)</th><th>Elasticsearch / Kibana (KQL / Discover)</th></tr>
+      <tr><td>Find all events for one UPI ref</td><td><code>{job="paytm"} |= "UPI_REF"</code></td><td><code>upi_ref: "UPI_REF"</code> in Discover</td></tr>
+      <tr><td>Find only failed settlements</td><td><code>{job="paytm", level="ERROR"}</code></td><td><code>level: "ERROR"</code></td></tr>
+      <tr><td>Find one failure reason (e.g. bank timeouts)</td><td><code>{job="paytm"} |= "BANK_TIMEOUT"</code></td><td><code>message: "*BANK_TIMEOUT*"</code></td></tr>
+      <tr><td>Aggregate: count failures by reason</td><td>harder — needs <code>| json | line_format</code> gymnastics</td><td>easy — a Kibana visualization / terms aggregation on a parsed field</td></tr>
+      <tr><td>Full-text fuzzy search across a field</td><td>not really Loki's strength</td><td>Elasticsearch's core strength</td></tr>
+      <tr><td>Cost/footprint for this lab's volume</td><td>lighter (labels-only index)</td><td>heavier (indexes every field)</td></tr>
+    </table>
+    <p class="hint">This table is a starting point — fill in your own findings after running both investigations for real.</p>
+  </div>
+
+  <div class="perf-card">
+    <h3>Reset lab state</h3>
+    <button class="perf-btn alt" onclick="resetLab()">Flush Redis cache</button>
+    <div class="log-line" id="resetLog"></div>
+  </div>
+</div>
+</main>
+
+<script>
+async function loadMerchants() {
+  const res = await fetch('/api/merchants');
+  const merchants = await res.json();
+  document.getElementById('merchantGrid').innerHTML = merchants.map(m => `
+    <div class="merchant-card">
+      <div class="merchant-name">${m.name}</div>
+      <div class="merchant-cat">${m.category}</div>
+      <div class="amount-row"><input type="number" value="500" id="amt-${m.id}"></div>
+      <button class="pay-btn" onclick="payMerchant(${m.id})">Pay</button>
+      <div class="pay-log" id="pay-log-${m.id}"></div>
+    </div>
+  `).join('');
+}
+
+async function payMerchant(id) {
+  const amount = parseInt(document.getElementById(`amt-${id}`).value, 10) || 100;
+  const log = document.getElementById(`pay-log-${id}`);
+  log.textContent = 'processing...';
+  const res = await fetch('/api/payments', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({merchant_id: id, customer_id: 'CUST-' + Math.floor(Math.random()*9999), amount})
+  });
+  const d = await res.json();
+  log.innerHTML = `${d.upi_ref}<br>trace_id=${d.trace_id.slice(0,8)}...`;
+}
+
+async function makePayment() {
+  const merchant_id = parseInt(document.getElementById('merchId').value, 10) || 1;
+  const amount = parseInt(document.getElementById('amount').value, 10) || 500;
+  const log = document.getElementById('payLog');
+  log.textContent = 'processing...';
+  const res = await fetch('/api/payments', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({merchant_id, customer_id: 'CUST-' + Math.floor(Math.random()*9999), amount})
+  });
+  if (res.ok) {
+    const d = await res.json();
+    log.innerHTML = `upi_ref=${d.upi_ref}\ncorrelation_id=${d.correlation_id}\ntrace_id=${d.trace_id}\n\n` +
+      `In Loki: {job="paytm"} |= "${d.upi_ref}"\n` +
+      `In Kibana Discover: upi_ref: "${d.upi_ref}"`;
+  } else {
+    const err = await res.json();
+    log.textContent = `Failed: ${err.detail}`;
+  }
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+
+loadMerchants();
+</script>
+</body>
+</html>

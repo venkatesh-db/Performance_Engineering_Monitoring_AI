@@ -1,0 +1,79 @@
+# Real Elasticsearch + real Kibana + real Loki + real Prometheus + real
+# Grafana (with Loki/Prometheus/Jaeger datasources), for Day 3 /
+# Module 4's guided Loki-vs-ELK comparison lab.
+#
+# Elasticsearch heap is deliberately capped small (512m) -- this is a
+# training lab on a shared dev machine already running several other
+# Docker stacks, not a production ES cluster.
+#
+# Reuses the shared Jaeger + Kafka containers from earlier modules
+# (`docker start irctc-jaeger kafka-kafka-1`).
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down
+# Kibana:     http://localhost:5601
+# Grafana:    http://localhost:3003 (admin/admin)
+# Elasticsearch: http://localhost:9200
+# Loki:       http://localhost:3101
+# Prometheus: http://localhost:9094
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  loki:
+    image: grafana/loki:3.1.0
+    ports:
+      - "3101:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9094:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3003:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - loki
+      - prometheus
+
+volumes:
+  es-data:
+  loki-data:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,74 @@
+
+
+
+
+
+All four folder names are unchanged. Here are execution steps for all 4 Day 3 projects, in module order.
+
+---
+
+## Module 1 — Licious Prometheus Lab
+
+
+open -a Docker   # if not already running
+docker start kafka-kafka-1
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/licious-prometheus-lab"
+docker compose -f prometheus/docker-compose.yml up -d
+source venv/bin/activate && uvicorn main:app --port 8008
+
+```
+Open `http://127.0.0.1:8008` (app) and `http://localhost:9090` (Prometheus).
+
+---
+
+## Module 2 — Groww Grafana Lab
+
+
+docker start kafka-kafka-1
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/groww-grafana-lab"
+docker compose up -d
+source venv/bin/activate && uvicorn main:app --port 8009
+
+```
+Open `http://127.0.0.1:8009` (app), `http://localhost:3001` (Grafana, admin/admin), `http://localhost:9091` (Prometheus).
+
+---
+
+## Module 3 — Flipkart Loki Lab
+
+
+docker start irctc-jaeger kafka-kafka-1
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/flipkart-loki-lab"
+docker compose up -d
+source venv/bin/activate && uvicorn main:app --port 8010
+
+```
+In a **second terminal**, start the consumer so payment-processing logs flow:
+
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/flipkart-loki-lab"
+source venv/bin/activate && python3 consumer.py
+```
+
+Open `http://127.0.0.1:8010` (app), `http://localhost:3002` (Grafana, admin/admin), `http://localhost:16686` (Jaeger).
+
+---
+
+## Module 4 — Paytm ELK Lab
+
+
+docker start irctc-jaeger kafka-kafka-1
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/paytm-elk-lab"
+docker compose up -d
+source venv/bin/activate && uvicorn main:app --port 8011
+
+```
+In a **second terminal**, start the consumer:
+
+
+cd "/Users/venkatesh/Performance Engineering & Monitoring tools/paytm-elk-lab"
+source venv/bin/activate && python3 consumer.py
+
+```
+Open `http://127.0.0.1:8011` (app), `http://localhost:5601` (Kibana), `http://localhost:3003` (Grafana, admin/admin), `http://localhost:9200` (Elasticsearch, raw JSON).
+
