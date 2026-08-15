@@ -1,0 +1,52 @@
+# Real Prometheus + real Grafana (with file-provisioned datasource,
+# dashboard, and alert rules) + real postgres_exporter + real
+# redis_exporter, for Day 3 / Module 2.
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down
+# Grafana: http://localhost:3001 (admin/admin)
+# Prometheus: http://localhost:9091
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_FEATURE_TOGGLES_ENABLE=
+      - GF_ALERTING_ENABLED=true
+      - GF_UNIFIED_ALERTING_ENABLED=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      - DATA_SOURCE_NAME=postgresql://venkatesh@host.docker.internal:5432/groww_lab?sslmode=disable
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    environment:
+      - REDIS_ADDR=redis://host.docker.internal:6379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  prometheus-data:
+  grafana-data:

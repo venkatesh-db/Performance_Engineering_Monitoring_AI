@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StockNest — Trade Smart</title>
+<style>
+  :root { --brand:#00b386; --brand-dark:#00805f; --ink:#1a1a2e; --bg:#f5f7fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin:0; background: var(--bg); color: var(--ink); }
+  header { background: var(--ink); color: white; padding: 14px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  .logo { font-size: 22px; font-weight: 800; }
+  .logo span { color: var(--brand); }
+  .wallet { background:#262a44; padding:8px 16px; border-radius:20px; font-size:13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .ticker-strip { display:flex; gap:10px; overflow-x:auto; margin-bottom:20px; padding-bottom:6px; }
+  .ticker-chip { background:white; border-radius:8px; padding:10px 14px; min-width:130px; box-shadow:0 1px 3px rgba(0,0,0,.06); flex-shrink:0; }
+  .ticker-chip .sym { font-weight:800; font-size:13px; }
+  .ticker-chip .ltp { font-size:16px; font-weight:700; color: var(--brand-dark); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .stock-card { background:white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .stock-sym { font-weight:800; font-size:15px; }
+  .stock-name { color:#888; font-size:12px; margin-bottom:8px; }
+  .stock-sector { display:inline-block; background:#eef7f3; color: var(--brand-dark); font-size:10px; padding:2px 8px; border-radius:10px; margin-bottom:8px; }
+  .stock-ltp { font-size:20px; font-weight:800; margin-bottom:10px; }
+  .trade-row { display:flex; gap:6px; }
+  .trade-row input { width:50px; padding:6px; border:1px solid #ddd; border-radius:6px; }
+  .buy-btn, .sell-btn { flex:1; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px; color:white; }
+  .buy-btn { background: var(--brand); }
+  .sell-btn { background:#e5484d; }
+  .order-log { font-size:11px; color:#888; margin-top:6px; min-height:14px; }
+
+  .perf-panel { margin-top: 40px; border-top: 3px dashed #ccc; padding-top: 24px; }
+  .perf-panel h2 { font-size:15px; color:#555; }
+  .perf-card { background: #1e2130; color: #d8dee9; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; font-family: monospace; font-size: 12.5px; }
+  .perf-card h3 { color: #7ee8b8; margin:0 0 10px; font-family: -apple-system, Arial, sans-serif; font-size:14px; }
+  .perf-card a { color: #a3be8c; }
+  .perf-card .hint { color: #7a8290; font-size: 11.5px; }
+  .perf-btn { background:#3a3f52; color:#eceff4; border:none; padding:7px 12px; border-radius:5px; cursor:pointer; margin-right:6px; margin-bottom:6px; font-family: -apple-system, Arial, sans-serif; font-size:12.5px; }
+  .perf-btn.alt { background:#5e8148; }
+  .perf-btn.danger { background:#8b3a3a; }
+  .log-line { margin-top:8px; white-space: pre-wrap; }
+  .metric-tiles { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-top:10px; }
+  .metric-tile { background:#262a3d; border-radius:6px; padding:10px 12px; }
+  .metric-tile .label { color:#7a8290; font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; font-family: -apple-system, Arial, sans-serif; }
+  .metric-tile .value { font-size:20px; font-weight:800; color:#7ee8b8; }
+  .metric-tile .value.warn { color:#ebcb8b; }
+  .metric-tile .value.na { color:#5a606c; font-size:14px; font-weight:600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Stock<span>Nest</span></div>
+  <div class="wallet">💰 Available: ₹2,50,000</div>
+</header>
+
+<main>
+  <div class="ticker-strip" id="tickerStrip"></div>
+  <div class="grid" id="stockGrid">Loading market data…</div>
+</main>
+
+<main>
+<div class="perf-panel">
+  <h2>🔧 Performance tester view — Day 3 / Module 2 (Grafana Dashboards &amp; Alerts)</h2>
+
+  <div class="perf-card">
+    <h3>Real Grafana &amp; Prometheus</h3>
+    <p>Grafana dashboard (RED/USE panels, provisioned): <a href="http://localhost:3001/d/groww-red-use" target="_blank">http://localhost:3001/d/groww-red-use</a> (admin/admin)</p>
+    <p>Alert rules: <a href="http://localhost:3001/alerting/list" target="_blank">http://localhost:3001/alerting/list</a></p>
+    <p>Prometheus: <a href="http://localhost:9091" target="_blank">http://localhost:9091</a></p>
+    <p class="hint">Bring the stack up first: <code>docker compose up -d</code> in this project folder.</p>
+  </div>
+
+  <div class="perf-card">
+    <h3>Live dashboard — same numbers Grafana's panels show, rendered in-app</h3>
+    <div class="metric-tiles" id="metricTiles"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Trigger a symptom-based alert: sustained trading rush</h3>
+    <p class="hint">Fires waves of concurrent orders against a 4-connection DB pool. Watch the "CAUSE: DB pool" alert fire first (pool saturates fast), then the "SYMPTOM: P95 latency" alert follow once it's sustained for 30s.</p>
+    <input id="rushCount" value="60" style="width:60px">
+    <button class="perf-btn" onclick="tradingRush()">Fire sustained rush (waves)</button>
+    <div class="log-line" id="rushLog"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Trigger a real error (proves the error-rate panel isn't just decorative)</h3>
+    <button class="perf-btn danger" onclick="injectError()">Inject one real 500</button>
+    <div class="log-line" id="errorLog"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Reset lab state</h3>
+    <button class="perf-btn alt" onclick="resetLab()">Flush Redis cache</button>
+    <div class="log-line" id="resetLog"></div>
+  </div>
+</div>
+</main>
+
+<script>
+let STOCKS = [];
+
+async function loadStocks() {
+  const res = await fetch('/api/stocks');
+  STOCKS = await res.json();
+  document.getElementById('tickerStrip').innerHTML = STOCKS.slice(0, 8).map(s => `
+    <div class="ticker-chip"><div class="sym">${s.symbol}</div><div class="ltp">₹${s.ltp.toFixed(2)}</div></div>
+  `).join('');
+  document.getElementById('stockGrid').innerHTML = STOCKS.map(s => `
+    <div class="stock-card">
+      <div class="stock-sym">${s.symbol}</div>
+      <div class="stock-name">${s.name}</div>
+      <div class="stock-sector">${s.sector}</div>
+      <div class="stock-ltp">₹${s.ltp.toFixed(2)}</div>
+      <div class="trade-row">
+        <input type="number" value="1" min="1" id="qty-${s.symbol}">
+        <button class="buy-btn" onclick="trade('${s.symbol}','BUY')">Buy</button>
+        <button class="sell-btn" onclick="trade('${s.symbol}','SELL')">Sell</button>
+      </div>
+      <div class="order-log" id="log-${s.symbol}"></div>
+    </div>
+  `).join('');
+}
+
+async function trade(symbol, side) {
+  const qty = parseInt(document.getElementById(`qty-${symbol}`).value, 10) || 1;
+  const log = document.getElementById(`log-${symbol}`);
+  log.textContent = 'placing order...';
+  const res = await fetch('/api/orders', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({symbol, side, qty, customer_id: 'STOREFRONT-CUSTOMER'})
+  });
+  if (res.ok) {
+    const d = await res.json();
+    log.textContent = `${side} order #${d.order_id} filled ✓`;
+  } else {
+    const err = await res.json();
+    log.textContent = `Failed: ${err.detail}`;
+  }
+}
+
+async function tradingRush() {
+  const requested = parseInt(document.getElementById('rushCount').value, 10) || 60;
+  const n = Math.min(requested, 200);
+  const log = document.getElementById('rushLog');
+  const BATCH = 10;
+  let done = 0;
+  for (let start = 0; start < n; start += BATCH) {
+    const batch = [];
+    for (let i = start; i < Math.min(start + BATCH, n); i++) {
+      const s = STOCKS[i % STOCKS.length];
+      batch.push(fetch(`/api/stocks/${s.symbol}`));
+      batch.push(fetch('/api/orders', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({symbol: s.symbol, side: i % 2 ? 'BUY' : 'SELL', qty: 1, customer_id: `RUSH-${i}`})
+      }));
+    }
+    await Promise.all(batch);
+    done += batch.length;
+    log.textContent = `${done}/${n * 2} requests done...`;
+    await new Promise(r => setTimeout(r, 200)); // small gap between waves, still sustains pool pressure
+  }
+  log.textContent += `\ndone. Check the Grafana dashboard / alert list, or the tiles above.`;
+}
+
+async function injectError() {
+  const log = document.getElementById('errorLog');
+  const res = await fetch('/api/admin/inject-error', {method: 'POST'});
+  log.textContent = `status=${res.status} (expected 500)`;
+}
+
+const TILE_DEFS = [
+  ['request_rate_per_sec', 'Request rate', v => v.toFixed(2) + '/s'],
+  ['error_rate_pct', 'Error rate', v => v.toFixed(1) + '%', v => v > 1],
+  ['p95_latency_ms', 'P95 latency (1m)', v => v.toFixed(0) + 'ms', v => v > 500],
+  ['active_requests', 'Active requests', v => v.toFixed(0)],
+  ['db_pool_pct', 'DB pool usage', v => v.toFixed(0) + '%', v => v > 75],
+  ['cache_hit_ratio_pct', 'Cache hit ratio', v => v.toFixed(1) + '%', v => v < 50],
+  ['kafka_lag_seconds', 'Kafka consumer lag', v => v.toFixed(2) + 's', v => v > 1],
+];
+
+async function refreshDashboard() {
+  const el = document.getElementById('metricTiles');
+  try {
+    const res = await fetch('/api/dashboard-metrics');
+    const d = await res.json();
+    if (!d.prometheus_reachable) {
+      el.innerHTML = `<div class="hint">Prometheus isn't reachable at localhost:9091 — start it with <code>docker compose up -d</code>.</div>`;
+      return;
+    }
+    el.innerHTML = TILE_DEFS.map(([key, label, fmt, isWarn]) => {
+      const v = d.metrics[key];
+      const na = v === null || v === undefined;
+      const cls = na ? 'na' : (isWarn && isWarn(v) ? 'warn' : '');
+      return `<div class="metric-tile"><div class="label">${label}</div><div class="value ${cls}">${na ? 'no data yet' : fmt(v)}</div></div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div class="hint">Couldn't reach /api/dashboard-metrics.</div>`;
+  }
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+
+loadStocks();
+refreshDashboard();
+setInterval(refreshDashboard, 5000);
+</script>
+</body>
+</html>
