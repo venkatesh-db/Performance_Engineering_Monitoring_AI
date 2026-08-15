@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FreshCut — Fresh Meat &amp; Seafood, Delivered</title>
+<style>
+  :root { --brand:#c0202b; --brand-dark:#8f1420; --ink:#1a1a1a; --bg:#f7f5f2; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin:0; background: var(--bg); color: var(--ink); }
+
+  /* --- storefront header --- */
+  header { background: var(--brand); color: white; padding: 14px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: #ffd6d6; }
+  .cart-btn { background: var(--brand-dark); color:white; border:none; padding:10px 16px; border-radius:20px; cursor:pointer; font-weight:600; position:relative; }
+  .cart-count { background:white; color:var(--brand); border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; margin-left:6px; }
+
+  .banner { background: linear-gradient(90deg, var(--brand-dark), var(--brand)); color:white; padding: 18px 24px; text-align:center; }
+  .banner strong { font-size:16px; }
+  .banner button { margin-left: 14px; background:white; color:var(--brand); border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .category-bar { display:flex; gap:8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .category-bar button { background:white; border:1px solid #ddd; padding:8px 14px; border-radius:20px; cursor:pointer; font-size:13px; }
+  .category-bar button.active { background: var(--ink); color:white; border-color:var(--ink); }
+
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .product-card { background:white; border-radius: 12px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display:flex; flex-direction:column; }
+  .product-emoji { font-size: 44px; text-align:center; padding: 16px 0; background: #fbeceb; border-radius: 10px; margin-bottom: 10px; }
+  .product-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .product-cat { color:#888; font-size:11px; margin-bottom: 8px; text-transform:uppercase; letter-spacing:.5px; }
+  .product-price { font-weight:800; font-size:16px; margin-bottom:10px; }
+  .add-btn { background: var(--brand); color:white; border:none; padding:9px; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; }
+  .add-btn:disabled { background:#ccc; cursor:default; }
+  .stock-badge { font-size:11px; color:#1a7f37; margin-top:4px; }
+  .stock-badge.low { color:#c0202b; }
+
+  /* --- cart drawer --- */
+  .drawer-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:20; }
+  .drawer-overlay.open { display:block; }
+  .drawer { position:fixed; right:0; top:0; bottom:0; width: 340px; background:white; z-index:21; padding:20px; transform: translateX(100%); transition: transform .2s; overflow-y:auto; }
+  .drawer.open { transform: translateX(0); }
+  .drawer h3 { margin-top:0; }
+  .cart-line { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; font-size:13px; }
+  .checkout-btn { width:100%; background: var(--brand); color:white; border:none; padding:12px; border-radius:8px; font-weight:700; margin-top:14px; cursor:pointer; }
+  .close-drawer { background:none; border:none; font-size:20px; cursor:pointer; float:right; }
+
+  /* --- perf tester panel --- */
+  .perf-panel { margin-top: 40px; border-top: 3px dashed #ccc; padding-top: 24px; }
+  .perf-panel h2 { font-size:15px; color:#555; }
+  .perf-card { background: #20242b; color: #d8dee9; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; font-family: monospace; font-size: 12.5px; }
+  .perf-card h3 { color: #88c0d0; margin:0 0 10px; font-family: -apple-system, Arial, sans-serif; font-size:14px; }
+  .perf-card a { color: #a3be8c; }
+  .perf-card .hint { color: #7a8290; font-size: 11.5px; }
+  .perf-table { width:100%; border-collapse: collapse; margin-top:8px; }
+  .perf-table td, .perf-table th { padding: 4px 6px; text-align:left; border-bottom: 1px solid #333a45; }
+  .perf-btn { background:#4c566a; color:#eceff4; border:none; padding:7px 12px; border-radius:5px; cursor:pointer; margin-right:6px; margin-bottom:6px; font-family: -apple-system, Arial, sans-serif; font-size:12.5px; }
+  .perf-btn.alt { background:#5e8148; }
+  .log-line { margin-top:8px; white-space: pre-wrap; }
+  .metric-tiles { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-top:10px; }
+  .metric-tile { background:#2a2f38; border-radius:6px; padding:10px 12px; }
+  .metric-tile .label { color:#7a8290; font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; font-family: -apple-system, Arial, sans-serif; }
+  .metric-tile .value { font-size:20px; font-weight:800; color:#88c0d0; }
+  .metric-tile .value.warn { color:#ebcb8b; }
+  .metric-tile .value.na { color:#5a606c; font-size:14px; font-weight:600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Fresh<span>Cut</span></div>
+  <button class="cart-btn" onclick="toggleDrawer(true)">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+</header>
+
+<div class="banner">
+  <strong>⚡ Flash Sale — Weekend Special, Today Only</strong>
+  <button onclick="runFlashSale()">Shop the Sale</button>
+</div>
+
+<main>
+  <div class="category-bar" id="categoryBar"></div>
+  <div class="grid" id="productGrid">Loading products…</div>
+</main>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
+<div class="drawer" id="drawer">
+  <button class="close-drawer" onclick="toggleDrawer(false)">×</button>
+  <h3>Your Cart</h3>
+  <div id="cartLines"></div>
+  <button class="checkout-btn" onclick="checkout()">Checkout</button>
+  <div class="log-line" id="checkoutLog" style="color:#1a7f37; font-size:13px;"></div>
+</div>
+
+<main>
+<div class="perf-panel">
+  <h2>🔧 Performance tester view — Day 3 / Module 1 (Prometheus &amp; PromQL)</h2>
+
+  <div class="perf-card">
+    <h3>Live app metrics snapshot</h3>
+    <button class="perf-btn" onclick="refreshSummary()">Refresh</button>
+    <a href="/metrics" target="_blank">view raw /metrics →</a>
+    <table class="perf-table" id="summaryTable"><tbody></tbody></table>
+  </div>
+
+  <div class="perf-card">
+    <h3>Simulate flash-sale load directly (bypasses storefront UI)</h3>
+    <input id="rushCount" value="30" style="width:60px" type="text">
+    <button class="perf-btn" onclick="flashSaleLoad()">Fire N concurrent shoppers</button>
+    <div class="log-line" id="rushLog"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Live dashboard — real PromQL results, rendered in-app</h3>
+    <p class="hint">Queried server-side from this app to Prometheus (avoids the browser sandbox/CORS issue with opening localhost:9090 directly). Auto-refreshes every 5s.</p>
+    <div class="metric-tiles" id="metricTiles"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>PromQL queries — real Prometheus, opens in a new tab</h3>
+    <p class="hint">If links don't open (sandboxed preview), copy the query and paste it manually into <code>http://localhost:9090/graph</code> in your own browser.</p>
+    <div id="promqlLinks"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Reset lab state</h3>
+    <button class="perf-btn alt" onclick="resetLab()">Flush Redis cache</button>
+    <div class="log-line" id="resetLog"></div>
+  </div>
+</div>
+</main>
+
+<script>
+const PROM_URL = 'http://localhost:9090';
+const QUERIES = [
+  ['Request rate (5m)', 'sum(rate(http_requests_total[5m])) by (endpoint)'],
+  ['Error rate %', '100 * sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))'],
+  ['P95 latency by endpoint (1m — use right after a burst)', 'histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, endpoint))'],
+  ['P99 latency by endpoint (1m)', 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, endpoint))'],
+  ['Active requests', 'http_requests_active'],
+  ['DB pool usage %', '100 * db_pool_in_use / db_pool_max_size'],
+  ['Redis cache hit ratio', 'sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))'],
+  ['Kafka consumer lag (seconds)', 'kafka_consumer_lag_seconds'],
+  ['Endpoint cardinality check (should stay small & fixed)', 'count(count by (endpoint) (http_requests_total))'],
+];
+
+let PRODUCTS = [];
+let CART = {}; // product_id -> qty
+
+async function loadProducts() {
+  const ids = Array.from({length: 16}, (_, i) => i + 1);
+  const results = await Promise.all(ids.map(id => fetch(`/api/products/${id}`).then(r => r.ok ? r.json() : null)));
+  PRODUCTS = results.filter(Boolean);
+  renderCategoryBar();
+  renderGrid('All');
+}
+
+const EMOJI = { Chicken: '🍗', Mutton: '🐐', Seafood: '🦐', Eggs: '🥚', 'Ready-to-cook': '🍽️' };
+
+function renderCategoryBar() {
+  const cats = ['All', ...new Set(PRODUCTS.map(p => p.category))];
+  document.getElementById('categoryBar').innerHTML = cats.map(c =>
+    `<button class="${c === 'All' ? 'active' : ''}" onclick="selectCategory('${c}', this)">${c}</button>`
+  ).join('');
+}
+
+function selectCategory(cat, btn) {
+  document.querySelectorAll('.category-bar button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid(cat);
+}
+
+function renderGrid(cat) {
+  const items = cat === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === cat);
+  document.getElementById('productGrid').innerHTML = items.map(p => `
+    <div class="product-card">
+      <div class="product-emoji">${EMOJI[p.category] || '🍖'}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-cat">${p.category}</div>
+      <div class="product-price">₹${p.price}</div>
+      <button class="add-btn" ${p.stock_qty === 0 ? 'disabled' : ''} onclick="addToCart(${p.id})">
+        ${p.stock_qty === 0 ? 'Out of stock' : 'Add to Cart'}
+      </button>
+      <div class="stock-badge ${p.stock_qty < 10 ? 'low' : ''}">${p.stock_qty} in stock</div>
+    </div>
+  `).join('');
+}
+
+function addToCart(id) {
+  CART[id] = (CART[id] || 0) + 1;
+  document.getElementById('checkoutLog').textContent = '';
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const count = Object.values(CART).reduce((a, b) => a + b, 0);
+  document.getElementById('cartCount').textContent = count;
+  const lines = Object.entries(CART).map(([id, qty]) => {
+    const p = PRODUCTS.find(pr => pr.id == id);
+    return `<div class="cart-line"><span>${p ? p.name : 'Product #' + id} × ${qty}</span><span>₹${p ? p.price * qty : ''}</span></div>`;
+  }).join('') || '<p style="color:#999;font-size:13px;">Cart is empty</p>';
+  document.getElementById('cartLines').innerHTML = lines;
+}
+
+function toggleDrawer(open) {
+  document.getElementById('drawer').classList.toggle('open', open);
+  document.getElementById('drawerOverlay').classList.toggle('open', open);
+}
+
+async function checkout() {
+  const log = document.getElementById('checkoutLog');
+  const entries = Object.entries(CART);
+  if (!entries.length) { log.textContent = 'Cart is empty.'; return; }
+  log.textContent = 'Placing order...';
+  let placed = 0;
+  for (const [id, qty] of entries) {
+    const res = await fetch('/api/orders', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({product_id: parseInt(id, 10), customer_id: 'STOREFRONT-CUSTOMER', qty})
+    });
+    if (res.ok) placed++;
+  }
+  log.textContent = `${placed}/${entries.length} line item(s) confirmed ✓`;
+  CART = {};
+  updateCartUI();
+  refreshSummary();
+}
+
+async function runFlashSale() {
+  // A "shopper stampede" on the current category grid: many simulated
+  // customers browsing + buying the same items at once, driven from the
+  // real storefront's own API calls (not a separate synthetic script).
+  const ids = PRODUCTS.slice(0, 8).map(p => p.id);
+  const promises = [];
+  for (let i = 0; i < 25; i++) {
+    const pid = ids[i % ids.length];
+    promises.push(fetch(`/api/products/${pid}`));
+    promises.push(fetch('/api/orders', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({product_id: pid, customer_id: `SALE-SHOPPER-${i}`, qty: 1})
+    }));
+  }
+  await Promise.all(promises);
+  refreshSummary();
+  alert('Flash-sale traffic simulated — scroll down to the performance tester view to see the effect in Prometheus.');
+}
+
+async function refreshSummary() {
+  const res = await fetch('/api/summary');
+  const d = await res.json();
+  document.querySelector('#summaryTable tbody').innerHTML = `
+    <tr><th>DB pool</th><td>${d.db_pool_in_use}/${d.db_pool_max} in use</td></tr>
+    <tr><th>Kafka</th><td>${d.kafka_available ? 'connected' : 'unavailable (' + (d.kafka_error||'') + ')'}</td></tr>
+  `;
+}
+
+const TILE_DEFS = [
+  ['request_rate_per_sec', 'Request rate', v => v.toFixed(2) + '/s'],
+  ['error_rate_pct', 'Error rate', v => v.toFixed(1) + '%', v => v > 1],
+  ['p95_latency_ms', 'P95 latency (1m)', v => v.toFixed(0) + 'ms', v => v > 500],
+  ['active_requests', 'Active requests', v => v.toFixed(0)],
+  ['db_pool_pct', 'DB pool usage', v => v.toFixed(0) + '%', v => v > 75],
+  ['cache_hit_ratio_pct', 'Cache hit ratio', v => v.toFixed(1) + '%', v => v < 50],
+  ['kafka_lag_seconds', 'Kafka consumer lag', v => v.toFixed(2) + 's', v => v > 1],
+];
+
+async function refreshDashboard() {
+  const el = document.getElementById('metricTiles');
+  try {
+    const res = await fetch('/api/dashboard-metrics');
+    const d = await res.json();
+    if (!d.prometheus_reachable) {
+      el.innerHTML = `<div class="hint">Prometheus isn't reachable at localhost:9090 — start it with <code>docker compose -f prometheus/docker-compose.yml up -d</code>.</div>`;
+      return;
+    }
+    el.innerHTML = TILE_DEFS.map(([key, label, fmt, isWarn]) => {
+      const v = d.metrics[key];
+      const na = v === null || v === undefined;
+      const cls = na ? 'na' : (isWarn && isWarn(v) ? 'warn' : '');
+      return `<div class="metric-tile"><div class="label">${label}</div><div class="value ${cls}">${na ? 'no data yet' : fmt(v)}</div></div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div class="hint">Couldn't reach the app's own /api/dashboard-metrics endpoint.</div>`;
+  }
+}
+
+function renderPromqlLinks() {
+  document.getElementById('promqlLinks').innerHTML = QUERIES.map(([label, q]) =>
+    `<div style="margin-bottom:8px;"><a href="${PROM_URL}/graph?g0.expr=${encodeURIComponent(q)}&g0.tab=1" target="_blank">${label}</a><br><span style="color:#7a8290;">${q}</span></div>`
+  ).join('');
+}
+
+async function flashSaleLoad() {
+  // Browsers cap concurrent connections per origin at ~6 (HTTP/1.1), so
+  // firing hundreds of fetches in one Promise.all doesn't actually run
+  // them concurrently -- most just queue silently, making the UI look
+  // frozen for a long time even though the backend is fine. Batching in
+  // small waves keeps it genuinely responsive and gives live progress.
+  const requested = parseInt(document.getElementById('rushCount').value, 10) || 30;
+  const n = Math.min(requested, 150);
+  const log = document.getElementById('rushLog');
+  if (requested > 150) {
+    log.textContent = `Capped at 150 shoppers (you asked for ${requested}) -- higher counts just queue behind the browser's per-origin connection limit and look frozen without helping the demo.`;
+  }
+  const BATCH_SIZE = 10;
+  const t0 = performance.now();
+  let done = 0, failed = 0;
+  for (let start = 0; start < n; start += BATCH_SIZE) {
+    const batch = [];
+    for (let i = start; i < Math.min(start + BATCH_SIZE, n); i++) {
+      const pid = (i % 12) + 1;
+      batch.push(fetch(`/api/products/${pid}`));
+      batch.push(fetch('/api/orders', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({product_id: pid, customer_id: `RUSH-${i}`, qty: 1})
+      }));
+    }
+    const results = await Promise.all(batch);
+    done += results.length;
+    failed += results.filter(r => !r.ok).length;
+    log.textContent = `${done}/${n * 2} requests done (${failed} failed)...`;
+  }
+  const totalMs = (performance.now() - t0).toFixed(0);
+  log.innerHTML = `${n * 2} requests finished in ${totalMs}ms. Failed: ${failed}.<br>` +
+    `<span class="hint">Now check the live dashboard above, or open the P95-latency / DB-pool-usage query.</span>`;
+  refreshSummary();
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+
+renderPromqlLinks();
+refreshSummary();
+loadProducts();
+refreshDashboard();
+setInterval(refreshDashboard, 5000);
+</script>
+</body>
+</html>

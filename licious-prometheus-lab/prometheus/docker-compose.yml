@@ -1,0 +1,36 @@
+# Real Prometheus + real postgres_exporter + real redis_exporter for
+# Day 3 / Module 1. The app itself (main.py) exposes /metrics directly;
+# these two exporters cover PostgreSQL- and Redis-server-level metrics
+# the module's hands-on lab asks for ("collect PostgreSQL, Redis and
+# Kafka-relevant metrics through the supplied exporters").
+#
+# Start:  docker compose -f prometheus/docker-compose.yml up -d
+# Stop:   docker compose -f prometheus/docker-compose.yml down
+# UI:     http://localhost:9090
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      - DATA_SOURCE_NAME=postgresql://venkatesh@host.docker.internal:5432/licious_lab?sslmode=disable
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    environment:
+      - REDIS_ADDR=redis://host.docker.internal:6379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  prometheus-data:
