@@ -1,0 +1,54 @@
+# Real Loki + real Prometheus + real Grafana (with Loki, Prometheus,
+# AND Jaeger datasources all provisioned in one Grafana, so a single
+# request is navigable from a latency panel -> logs -> trace) for
+# Day 3 / Module 3.
+#
+# Reuses the shared Jaeger container from Day 2 / Module 4
+# (irctc-jaeger, must already be running -- `docker start irctc-jaeger`)
+# rather than spinning up a second Jaeger instance.
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down
+# Grafana: http://localhost:3002 (admin/admin)
+# Prometheus: http://localhost:9092
+# Loki:    http://localhost:3100
+services:
+  loki:
+    image: grafana/loki:3.1.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9093:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - loki
+      - prometheus
+
+volumes:
+  loki-data:
+  prometheus-data:
+  grafana-data:

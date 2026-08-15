@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kartify — Shop Everything</title>
+<style>
+  :root { --brand:#2874f0; --brand-dark:#1a56c9; --ink:#212121; --bg:#f1f3f6; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin:0; background: var(--bg); color: var(--ink); }
+  header { background: var(--brand); color: white; padding: 14px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-size: 22px; font-weight: 800; font-style:italic; }
+  .logo span { color: #ffe500; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .product-card { background:white; border-radius: 4px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .product-name { font-weight:600; font-size:14px; margin-bottom:4px; }
+  .product-cat { color:#878787; font-size:11px; margin-bottom:8px; }
+  .product-price { font-size:18px; font-weight:700; margin-bottom:10px; }
+  .buy-btn { width:100%; background: var(--brand); color:white; border:none; padding:9px; border-radius:2px; cursor:pointer; font-weight:600; font-size:13px; }
+  .order-log { font-size:11px; color:#878787; margin-top:6px; min-height:14px; word-break:break-all; }
+
+  .perf-panel { margin-top: 40px; border-top: 3px dashed #ccc; padding-top: 24px; }
+  .perf-panel h2 { font-size:15px; color:#555; }
+  .perf-card { background: #1a1d29; color: #d8dee9; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; font-family: monospace; font-size: 12.5px; }
+  .perf-card h3 { color: #f4a742; margin:0 0 10px; font-family: -apple-system, Arial, sans-serif; font-size:14px; }
+  .perf-card a { color: #a3be8c; }
+  .perf-card .hint { color: #7a8290; font-size: 11.5px; }
+  .perf-btn { background:#3a3f52; color:#eceff4; border:none; padding:7px 12px; border-radius:5px; cursor:pointer; margin-right:6px; margin-bottom:6px; font-family: -apple-system, Arial, sans-serif; font-size:12.5px; }
+  .perf-btn.alt { background:#5e8148; }
+  .log-line { margin-top:8px; white-space: pre-wrap; word-break: break-all; }
+  input.perf-input { padding:6px 8px; margin-right:6px; border:1px solid #444; border-radius:5px; background:#0f1117; color:#d8dee9; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Kart<span>ify</span></div>
+</header>
+
+<main>
+  <div class="grid" id="productGrid">Loading products…</div>
+</main>
+
+<main>
+<div class="perf-panel">
+  <h2>🔧 Performance tester view — Day 3 / Module 3 (Loki &amp; Structured Logging)</h2>
+
+  <div class="perf-card">
+    <h3>Real observability stack</h3>
+    <p>Grafana (metrics + logs + traces, one place): <a href="http://localhost:3002/d/flipkart-mlt" target="_blank">http://localhost:3002/d/flipkart-mlt</a> (admin/admin)</p>
+    <p>Loki direct: <a href="http://localhost:3100" target="_blank">http://localhost:3100</a> &nbsp; Prometheus: <a href="http://localhost:9093" target="_blank">http://localhost:9093</a> &nbsp; Jaeger: <a href="http://localhost:16686" target="_blank">http://localhost:16686</a></p>
+    <p class="hint">Bring the stack up first: <code>docker compose up -d</code> (also needs the shared Jaeger + Kafka containers already running).</p>
+  </div>
+
+  <div class="perf-card">
+    <h3>Place an order, then search logs/traces by the returned IDs</h3>
+    <input id="prodId" class="perf-input" value="1" placeholder="product id" style="width:70px">
+    <button class="perf-btn" onclick="placeOrder()">Place order</button>
+    <div class="log-line" id="orderLog"></div>
+    <p class="hint">Run the consumer in a terminal to see payment processing: <code>python consumer.py</code></p>
+  </div>
+
+  <div class="perf-card">
+    <h3>LogQL cheat sheet for this lab (run in Grafana Explore or Loki directly)</h3>
+    <div id="logqlList"></div>
+  </div>
+
+  <div class="perf-card">
+    <h3>Reset lab state</h3>
+    <button class="perf-btn alt" onclick="resetLab()">Flush Redis cache</button>
+    <div class="log-line" id="resetLog"></div>
+  </div>
+</div>
+</main>
+
+<script>
+const LOKI_QUERIES = [
+  ['All Flipkart logs', '{job="flipkart"}'],
+  ['Only the order API', '{job="flipkart", service="flipkart-order-api"}'],
+  ['Only the payment consumer', '{job="flipkart", service="flipkart-payment-consumer"}'],
+  ['Errors only', '{job="flipkart", level="ERROR"}'],
+  ['Slow payments', '{job="flipkart"} |= "slow"'],
+  ['Find one request by correlation_id (fill in the ID)', '{job="flipkart"} | json | correlation_id="PASTE_ID_HERE"'],
+  ['Find the unmasked-phone bug', '{job="flipkart"} |= "customer_phone_UNMASKED"'],
+  ['Requests slower than 500ms (parsed field)', '{job="flipkart", service="flipkart-order-api"} | json | duration_ms > 500'],
+];
+
+function renderLogqlList() {
+  document.getElementById('logqlList').innerHTML = LOKI_QUERIES.map(([label, q]) => `
+    <div style="margin-bottom:8px;"><strong>${label}</strong><br><code style="color:#a3be8c;">${q}</code></div>
+  `).join('');
+}
+
+async function loadProducts() {
+  const res = await fetch('/api/products');
+  const products = await res.json();
+  document.getElementById('productGrid').innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-name">${p.name}</div>
+      <div class="product-cat">${p.category}</div>
+      <div class="product-price">₹${p.price}</div>
+      <button class="buy-btn" onclick="buyProduct(${p.id})">Buy Now</button>
+      <div class="order-log" id="buy-log-${p.id}"></div>
+    </div>
+  `).join('');
+}
+
+async function buyProduct(id) {
+  const log = document.getElementById(`buy-log-${id}`);
+  log.textContent = 'placing order...';
+  const res = await fetch('/api/orders', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      product_id: id, customer_id: 'CUST-' + Math.floor(Math.random()*9999),
+      customer_email: 'buyer@example.com', customer_phone: '9876543210', qty: 1
+    })
+  });
+  const d = await res.json();
+  log.innerHTML = `Order #${d.order_id}<br>correlation_id=${d.correlation_id.slice(0,8)}...<br>trace_id=${d.trace_id.slice(0,8)}...`;
+}
+
+async function placeOrder() {
+  const id = parseInt(document.getElementById('prodId').value, 10) || 1;
+  const log = document.getElementById('orderLog');
+  log.textContent = 'placing order...';
+  const res = await fetch('/api/orders', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      product_id: id, customer_id: 'CUST-' + Math.floor(Math.random()*9999),
+      customer_email: 'buyer@example.com', customer_phone: '9876543210', qty: 1
+    })
+  });
+  if (res.ok) {
+    const d = await res.json();
+    log.innerHTML = `order_id=${d.order_id}\ncorrelation_id=${d.correlation_id}\ntrace_id=${d.trace_id}\nkafka_published=${d.kafka_published}\n\n` +
+      `Try in Loki: {job="flipkart"} | json | correlation_id="${d.correlation_id}"\n` +
+      `Try in Jaeger: search for trace ${d.trace_id}`;
+  } else {
+    const err = await res.json();
+    log.textContent = `Failed: ${err.detail}`;
+  }
+}
+
+async function resetLab() {
+  await fetch('/api/admin/reset', {method: 'POST'});
+  document.getElementById('resetLog').textContent = 'reset done';
+}
+
+renderLogqlList();
+loadProducts();
+</script>
+</body>
+</html>

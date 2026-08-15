@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: flipkart-dashboards
+    orgId: 1
+    folder: Flipkart
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
