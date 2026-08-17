@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payments
+    ports: ["5432:5432"]
+    command: >
+      postgres -c max_connections=100
+               -c shared_preload_libraries=pg_stat_statements
+               -c pg_stat_statements.track=all
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./app
+    ports: ["8000:8000"]
+    environment:
+      DB_DSN: postgresql://postgres:postgres@postgres:5432/payments
+      REDIS_URL: redis://redis:6379
+      # --- the four toggles the cohort flips for before/after runs ---
+      POOL_MAX: "${POOL_MAX:-5}"
+      USE_CACHE: "${USE_CACHE:-false}"
+      FIX_NPLUS1: "${FIX_NPLUS1:-false}"
+      ASYNC_FRAUD: "${ASYNC_FRAUD:-false}"
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
